@@ -43,8 +43,8 @@ async function trackUsageDirectly(type: 'post' | 'read'): Promise<void> {
     if (useSQLite) {
       // SQLite path
       const { appSettingsTableSQLite } = await import('./schema');
-      const { drizzle } = await import('drizzle-orm/better-sqlite3');
-      const typedDb = db as ReturnType<typeof drizzle>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const typedDb = db as any;
 
       const existingRows = await typedDb
         .select()
@@ -103,8 +103,8 @@ async function trackUsageDirectly(type: 'post' | 'read'): Promise<void> {
     } else {
       // PostgreSQL path
       const { appSettingsTablePostgres } = await import('./schema');
-      const { drizzle } = await import('drizzle-orm/node-postgres');
-      const typedDb = db as ReturnType<typeof drizzle>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const typedDb = db as any;
 
       const existingRows = await typedDb
         .select()
