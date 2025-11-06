@@ -2473,6 +2473,103 @@ export function getModuleRegistry(): ModuleCategory[] {
             },
           ],
         },
+        {
+          name: 'zoom',
+          functions: [
+            {
+              name: 'createMeeting',
+              description: 'Create a Zoom meeting',
+              signature: 'createMeeting({ topic, type, start_time?, duration?, timezone?, agenda?, password?, settings? }, userId?)',
+              example: 'createMeeting({ topic: "Team Standup", type: 2, start_time: "2024-12-01T10:00:00Z", duration: 30 })',
+            },
+            {
+              name: 'getMeeting',
+              description: 'Get Zoom meeting details',
+              signature: 'getMeeting(meetingId)',
+            },
+            {
+              name: 'updateMeeting',
+              description: 'Update a Zoom meeting',
+              signature: 'updateMeeting(meetingId, { topic?, start_time?, duration?, timezone?, agenda?, settings? })',
+            },
+            {
+              name: 'deleteMeeting',
+              description: 'Delete a Zoom meeting',
+              signature: 'deleteMeeting(meetingId)',
+            },
+            {
+              name: 'listMeetings',
+              description: 'List Zoom meetings',
+              signature: 'listMeetings({ userId?, type?, pageSize?, pageNumber?, from?, to? })',
+              example: 'listMeetings({ type: "upcoming", pageSize: 10 })',
+            },
+            {
+              name: 'getUpcomingMeetings',
+              description: 'Get upcoming Zoom meetings',
+              signature: 'getUpcomingMeetings(userId?, pageSize?)',
+            },
+            {
+              name: 'createInstantMeeting',
+              description: 'Create instant Zoom meeting (starts immediately)',
+              signature: 'createInstantMeeting(topic, settings?)',
+              example: 'createInstantMeeting("Quick Team Sync")',
+            },
+            {
+              name: 'createScheduledMeeting',
+              description: 'Create scheduled Zoom meeting (convenience function)',
+              signature: 'createScheduledMeeting(topic, startTime, duration, { agenda?, password?, settings?, timezone? })',
+              example: 'createScheduledMeeting("Product Review", new Date("2024-12-01T15:00:00Z"), 60, { agenda: "Q4 review" })',
+            },
+            {
+              name: 'getMeetingRecordings',
+              description: 'Get recordings for a meeting',
+              signature: 'getMeetingRecordings(meetingId)',
+            },
+            {
+              name: 'listRecordings',
+              description: 'List all cloud recordings',
+              signature: 'listRecordings(userId?, from?, to?, pageSize?)',
+              example: 'listRecordings("me", "2024-11-01", "2024-11-30")',
+            },
+            {
+              name: 'deleteRecording',
+              description: 'Delete meeting recording',
+              signature: 'deleteRecording(meetingId, recordingId?)',
+            },
+            {
+              name: 'getUser',
+              description: 'Get Zoom user details',
+              signature: 'getUser(userId?)',
+              example: 'getUser("me")',
+            },
+            {
+              name: 'getCurrentUser',
+              description: 'Get current authenticated user',
+              signature: 'getCurrentUser()',
+            },
+            {
+              name: 'listUsers',
+              description: 'List Zoom users in account',
+              signature: 'listUsers(status?, pageSize?)',
+              example: 'listUsers("active", 30)',
+            },
+            {
+              name: 'createWebinar',
+              description: 'Create a Zoom webinar',
+              signature: 'createWebinar({ topic, type, start_time?, duration?, timezone?, agenda?, settings? }, userId?)',
+            },
+            {
+              name: 'getWebinar',
+              description: 'Get Zoom webinar details',
+              signature: 'getWebinar(webinarId)',
+            },
+            {
+              name: 'listWebinars',
+              description: 'List Zoom webinars',
+              signature: 'listWebinars(userId?, pageSize?)',
+            },
+          ],
+        },
       ],
     },
     {
