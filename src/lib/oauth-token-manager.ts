@@ -154,6 +154,44 @@ const OAUTH_PROVIDERS: Record<string, OAuthProviderConfig> = {
     },
   },
 
+  outlook: {
+    name: 'Outlook (Microsoft OAuth)',
+    refreshTokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+    buildRefreshRequest: (refreshToken, clientId, clientSecret) => {
+      if (!clientId || !clientSecret) {
+        throw new Error('Outlook OAuth requires clientId and clientSecret for token refresh');
+      }
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: 'https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite offline_access',
+      });
+
+      return {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+      };
+    },
+    parseRefreshResponse: (response) => {
+      const data = response as {
+        access_token: string;
+        refresh_token?: string;
+        expires_in?: number;
+      };
+      return {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_in: data.expires_in,
+      };
+    },
+  },
+
   linkedin: {
     name: 'LinkedIn',
     refreshTokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',

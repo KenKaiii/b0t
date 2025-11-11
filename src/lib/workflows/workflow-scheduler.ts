@@ -5,6 +5,7 @@ import { sql } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { queueWorkflowExecution, isWorkflowQueueAvailable } from './workflow-queue';
 import { executeWorkflow } from './executor';
+import { emailTriggerPoller } from './email-triggers';
 
 /**
  * Workflow Scheduler
@@ -41,6 +42,10 @@ class WorkflowScheduler {
 
     try {
       await this.syncWorkflows();
+
+      // Initialize email trigger polling
+      await emailTriggerPoller.initialize();
+
       this.isInitialized = true;
       if (this.scheduledWorkflows.size > 0) {
         logger.info(
@@ -252,6 +257,9 @@ class WorkflowScheduler {
     for (const [workflowId] of this.scheduledWorkflows) {
       this.unscheduleWorkflow(workflowId);
     }
+
+    // Stop email trigger polling
+    emailTriggerPoller.stop();
 
     this.isInitialized = false;
     logger.info('Workflow scheduler stopped');

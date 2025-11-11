@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { TwitterApi } from 'twitter-api-v2';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { oauthStateTable } from '@/lib/schema';
+import { oauthStateTable, userCredentialsTable } from '@/lib/schema';
 import { logger } from '@/lib/logger';
+import { decrypt } from '@/lib/encryption';
+import { eq } from 'drizzle-orm';
 
 /**
  * Twitter OAuth 2.0 Authorization Endpoint
@@ -28,36 +30,31 @@ export async function GET() {
       );
     }
 
-    // Try to get Twitter OAuth 2.0 app credentials from database first, fallback to env vars
-    let clientId = process.env.TWITTER_CLIENT_ID;
-    let clientSecret = process.env.TWITTER_CLIENT_SECRET;
+    // Get Twitter OAuth app credentials from database
+    const [appCred] = await db
+      .select()
+      .from(userCredentialsTable)
+      .where(eq(userCredentialsTable.platform, 'twitter_oauth2_app'))
+      .limit(1);
 
-    // If not in env, try to get from database (user_credentials table)
-    if (!clientId || !clientSecret) {
-      try {
-        const { getCredentialFields } = await import('@/lib/workflows/credentials');
-        const fields = await getCredentialFields(session.user.id, 'twitter_oauth2_app');
-
-        if (fields) {
-          clientId = fields.client_id;
-          clientSecret = fields.client_secret;
-        }
-      } catch (error) {
-        logger.error(
-          {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined
-          },
-          'Failed to fetch Twitter OAuth app credentials from database'
-        );
-      }
+    if (!appCred) {
+      logger.error('Twitter OAuth app credentials not configured');
+      return NextResponse.json(
+        { error: 'Twitter OAuth app not configured. Please add Twitter OAuth 2.0 App Credentials in the credentials page.' },
+        { status: 500 }
+      );
     }
 
-    // Check if credentials are available
+    // Decrypt and parse the OAuth app credentials
+    const decrypted = decrypt(appCred.encryptedValue);
+    const credentials = JSON.parse(decrypted);
+    const clientId = credentials.client_id;
+    const clientSecret = credentials.client_secret;
+
     if (!clientId || !clientSecret) {
-      logger.error('Twitter OAuth 2.0 app credentials not configured');
+      logger.error('Invalid Twitter OAuth app credentials');
       return NextResponse.json(
-        { error: 'Twitter OAuth is not configured. Please add Twitter OAuth app credentials (Client ID and Secret) in the credentials page.' },
+        { error: 'Invalid Twitter OAuth app credentials. Please re-add the credentials.' },
         { status: 500 }
       );
     }

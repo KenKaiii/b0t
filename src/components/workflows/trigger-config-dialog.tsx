@@ -17,11 +17,13 @@ import { CronTriggerConfig } from './trigger-configs/cron-trigger-config';
 import { TelegramTriggerConfig } from './trigger-configs/telegram-trigger-config';
 import { DiscordTriggerConfig } from './trigger-configs/discord-trigger-config';
 import { ChatInputTriggerConfig } from './trigger-configs/chat-input-trigger-config';
+import { GmailTriggerConfig } from './trigger-configs/gmail-trigger-config';
+import { OutlookTriggerConfig } from './trigger-configs/outlook-trigger-config';
 
 interface TriggerConfigDialogProps {
   workflowId: string;
   workflowName: string;
-  triggerType: 'manual' | 'cron' | 'webhook' | 'telegram' | 'discord' | 'chat' | 'chat-input';
+  triggerType: 'manual' | 'cron' | 'webhook' | 'telegram' | 'discord' | 'chat' | 'chat-input' | 'gmail' | 'outlook';
   triggerConfig?: Record<string, unknown>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -91,6 +93,10 @@ export function TriggerConfigDialog({
         return 'Configure chat-based workflow settings.';
       case 'chat-input':
         return 'Configure custom input fields for this workflow. Users will fill these fields when triggering the workflow.';
+      case 'gmail':
+        return 'Configure Gmail email filters and polling settings to automatically trigger this workflow when matching emails arrive.';
+      case 'outlook':
+        return 'Configure Outlook email filters and polling settings to automatically trigger this workflow when matching emails arrive.';
       default:
         return 'Configure trigger settings for this workflow.';
     }
@@ -112,6 +118,10 @@ export function TriggerConfigDialog({
         return 'Chat Trigger';
       case 'chat-input':
         return 'Chat Input Trigger';
+      case 'gmail':
+        return 'Gmail Email Trigger';
+      case 'outlook':
+        return 'Outlook Email Trigger';
       default:
         return 'Trigger Configuration';
     }
@@ -149,6 +159,20 @@ export function TriggerConfigDialog({
       case 'chat-input':
         return (
           <ChatInputTriggerConfig
+            initialConfig={triggerConfig}
+            onConfigChange={setTriggerData}
+          />
+        );
+      case 'gmail':
+        return (
+          <GmailTriggerConfig
+            initialConfig={triggerConfig}
+            onConfigChange={setTriggerData}
+          />
+        );
+      case 'outlook':
+        return (
+          <OutlookTriggerConfig
             initialConfig={triggerConfig}
             onConfigChange={setTriggerData}
           />

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Download, Trash2, Play, Key, MessageSquare, Sliders, BarChart3, Pencil, Clock, Webhook, Send, FormInput } from 'lucide-react';
+import { Download, Trash2, Play, Key, MessageSquare, Sliders, BarChart3, Pencil, Clock, Webhook, Send, FormInput, Mail } from 'lucide-react';
 import { WorkflowListItem } from '@/types/workflows';
 import { WorkflowExecutionDialog } from './workflow-execution-dialog';
 import { CredentialsConfigDialog } from './credentials-config-dialog';
@@ -171,6 +171,9 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
         return Clock;
       case 'webhook':
         return Webhook;
+      case 'gmail':
+      case 'outlook':
+        return Mail;
       case 'telegram':
       case 'discord':
         return Send;
@@ -189,6 +192,10 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
         return { label: 'Run Now', icon: Play };
       case 'webhook':
         return { label: 'Test', icon: Play };
+      case 'gmail':
+        return { label: 'Gmail', icon: Mail };
+      case 'outlook':
+        return { label: 'Outlook', icon: Mail };
       case 'telegram':
         return { label: 'Telegram', icon: Send };
       case 'discord':
@@ -321,13 +328,8 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
             variant="ghost"
             size="sm"
             onClick={() => setOutputsDialogOpen(true)}
-            disabled={!workflow.lastRun}
-            className="h-7 px-2 transition-all duration-200 hover:scale-105 active:scale-95 group disabled:opacity-50"
-            title={
-              !workflow.lastRun
-                ? 'No execution history yet'
-                : 'View workflow execution history'
-            }
+            className="h-7 px-2 transition-all duration-200 hover:scale-105 active:scale-95 group"
+            title="View workflow execution history"
           >
             <BarChart3 className="h-3.5 w-3.5 mr-1 transition-transform duration-200 group-hover:scale-110" />
             <span className="text-xs">Outputs</span>
@@ -344,6 +346,7 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
         triggerConfig={workflow.trigger.config}
         open={executionDialogOpen}
         onOpenChange={setExecutionDialogOpen}
+        onExecuted={onUpdated}
       />
 
       <CredentialsConfigDialog

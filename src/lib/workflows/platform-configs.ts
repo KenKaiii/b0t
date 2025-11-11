@@ -307,6 +307,72 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     ]
   },
 
+  google_oauth_app: {
+    id: 'google_oauth_app',
+    name: 'Google OAuth App Credentials',
+    category: 'Communication',
+    fields: [
+      {
+        key: 'client_id',
+        label: 'Client ID',
+        type: 'text',
+        required: true,
+        description: 'OAuth 2.0 Client ID from Google Cloud Console'
+      },
+      {
+        key: 'client_secret',
+        label: 'Client Secret',
+        type: 'password',
+        required: true,
+        description: 'OAuth 2.0 Client Secret from Google Cloud Console'
+      }
+    ]
+  },
+
+  outlook_oauth_app: {
+    id: 'outlook_oauth_app',
+    name: 'Outlook OAuth App Credentials',
+    category: 'Communication',
+    fields: [
+      {
+        key: 'client_id',
+        label: 'Client ID',
+        type: 'text',
+        required: true,
+        description: 'OAuth 2.0 Client ID from Microsoft Azure Portal'
+      },
+      {
+        key: 'client_secret',
+        label: 'Client Secret',
+        type: 'password',
+        required: true,
+        description: 'OAuth 2.0 Client Secret from Microsoft Azure Portal'
+      }
+    ]
+  },
+
+  youtube_oauth_app: {
+    id: 'youtube_oauth_app',
+    name: 'YouTube OAuth App Credentials',
+    category: 'Social Media',
+    fields: [
+      {
+        key: 'client_id',
+        label: 'Client ID',
+        type: 'text',
+        required: true,
+        description: 'OAuth 2.0 Client ID from Google Cloud Console'
+      },
+      {
+        key: 'client_secret',
+        label: 'Client Secret',
+        type: 'password',
+        required: true,
+        description: 'OAuth 2.0 Client Secret from Google Cloud Console'
+      }
+    ]
+  },
+
   // ============================================
   // DATA & DATABASES
   // ============================================

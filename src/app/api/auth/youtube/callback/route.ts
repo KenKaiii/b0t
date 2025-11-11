@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { db } from '@/lib/db';
-import { oauthStateTable, accountsTable } from '@/lib/schema';
+import { oauthStateTable, accountsTable, userCredentialsTable } from '@/lib/schema';
 import { logger } from '@/lib/logger';
 import { eq, and } from 'drizzle-orm';
-import { encrypt } from '@/lib/encryption';
+import { encrypt, decrypt } from '@/lib/encryption';
 
 /**
  * YouTube OAuth 2.0 Callback Handler
@@ -118,9 +118,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if YouTube OAuth 2.0 credentials are configured
-    if (!process.env.YOUTUBE_CLIENT_ID || !process.env.YOUTUBE_CLIENT_SECRET) {
-      logger.error('YouTube OAuth 2.0 credentials not configured');
+    // Get YouTube OAuth app credentials from database
+    const [appCred] = await db
+      .select()
+      .from(userCredentialsTable)
+      .where(eq(userCredentialsTable.platform, 'youtube_oauth_app'))
+      .limit(1);
+
+    if (!appCred) {
+      logger.error('YouTube OAuth app credentials not configured');
+      return NextResponse.json(
+        { error: 'YouTube OAuth is not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Decrypt and parse the OAuth app credentials
+    const decrypted = decrypt(appCred.encryptedValue);
+    const credentials = JSON.parse(decrypted);
+    const clientId = credentials.client_id;
+    const clientSecret = credentials.client_secret;
+
+    if (!clientId || !clientSecret) {
+      logger.error('Invalid YouTube OAuth app credentials');
       return NextResponse.json(
         { error: 'YouTube OAuth is not configured' },
         { status: 500 }
@@ -148,8 +168,8 @@ export async function GET(request: NextRequest) {
       : 'http://localhost:3000/api/auth/youtube/callback';
 
     const oauth2Client = new google.auth.OAuth2(
-      process.env.YOUTUBE_CLIENT_ID,
-      process.env.YOUTUBE_CLIENT_SECRET,
+      clientId,
+      clientSecret,
       callbackUrl
     );
 

@@ -25,7 +25,7 @@ interface WorkflowExecutionDialogProps {
   workflowName: string;
   workflowDescription?: string;
   workflowConfig?: Record<string, unknown>;
-  triggerType: 'manual' | 'cron' | 'webhook' | 'telegram' | 'discord' | 'chat' | 'chat-input';
+  triggerType: 'manual' | 'cron' | 'webhook' | 'telegram' | 'discord' | 'chat' | 'chat-input' | 'gmail' | 'outlook';
   triggerConfig?: Record<string, unknown>;
   open: boolean;
   onOpenChange: (open: boolean) => void;

@@ -277,6 +277,8 @@ const PLATFORM_CAPABILITIES: Record<string, PlatformCapability> = {
   // OAUTH ONLY
   // ============================================
 
+  'gmail': { category: 'oauth' },
+  'outlook': { category: 'oauth' },
   'instagram': { category: 'oauth' },
   'tiktok': { category: 'oauth' },
   'linkedin': { category: 'oauth' },
@@ -645,6 +647,8 @@ export function getPlatformDisplayName(platform: string): string {
     replicate: 'Replicate',
 
     // Communication
+    gmail: 'Gmail',
+    outlook: 'Outlook',
     slack: 'Slack',
     resend: 'Resend',
     sendgrid: 'SendGrid',
@@ -726,6 +730,8 @@ export function getPlatformIcon(platform: string): string {
     replicate: 'Copy',
 
     // Communication
+    gmail: 'Mail',
+    outlook: 'Mail',
     slack: 'MessageCircle',
     resend: 'Mail',
     sendgrid: 'Mail',

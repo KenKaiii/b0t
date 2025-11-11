@@ -127,6 +127,8 @@ export async function GET(
     // Platform aliases for credential lookup
     // Maps platform names (from analyze-credentials) to actual credential IDs (from platform-configs)
     const platformAliases: Record<string, string[]> = {
+      'gmail': ['google'], // Gmail modules use Google OAuth
+      'outlook': ['outlook'], // Outlook modules use Outlook OAuth
       'youtube': ['youtube_apikey', 'youtube'],
       'twitter': ['twitter_oauth2', 'twitter'],
       'twitter-oauth': ['twitter', 'twitter_oauth2'], // For social.twitter-oauth.* module paths
@@ -189,6 +191,8 @@ export async function GET(
       // Map module platform names to OAuth endpoint names
       // E.g., 'twitter-oauth' -> 'twitter' for /api/auth/twitter/authorize
       const oauthPlatformMap: Record<string, string> = {
+        'gmail': 'google',
+        'outlook': 'outlook',
         'twitter-oauth': 'twitter',
         'google-sheets': 'googlesheets',
         'google-calendar': 'googlecalendar',

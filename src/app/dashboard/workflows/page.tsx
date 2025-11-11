@@ -38,7 +38,12 @@ export default function WorkflowsPage() {
       const url = currentClient?.id
         ? `/api/workflows?organizationId=${currentClient.id}`
         : '/api/workflows';
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
       const data = await response.json();
       setWorkflows(data.workflows || []);
     } catch (error) {
@@ -50,6 +55,18 @@ export default function WorkflowsPage() {
 
   useEffect(() => {
     fetchWorkflows();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentClient]);
+
+  // Poll for new workflows every 3 seconds when page is visible
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchWorkflows();
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentClient]);
 
@@ -119,16 +136,20 @@ export default function WorkflowsPage() {
       if (result.requiredCredentials && result.requiredCredentials.length > 0) {
         toast.success(`Workflow imported successfully!`, {
           description: `"${result.name}" was imported. Required credentials: ${result.requiredCredentials.join(', ')}. Please add these in the Credentials page.`,
-          duration: 8000,
+          duration: 5000,
         });
       } else {
         toast.success('Workflow imported successfully!', {
           description: `"${result.name}" has been added to your workflows.`,
+          duration: 3000,
         });
       }
 
+      // Close dialog
       setShowImportDialog(false);
-      fetchWorkflows();
+
+      // Hard reload the page to show the new workflow
+      window.location.reload();
     } catch (error) {
       console.error('Failed to import workflow:', error);
       setImportError(
@@ -280,6 +301,8 @@ export default function WorkflowsPage() {
                 <SelectItem value="cron">Scheduled</SelectItem>
                 <SelectItem value="webhook">Webhook</SelectItem>
                 <SelectItem value="chat">Chat</SelectItem>
+                <SelectItem value="gmail">Gmail</SelectItem>
+                <SelectItem value="outlook">Outlook</SelectItem>
                 <SelectItem value="telegram">Telegram</SelectItem>
                 <SelectItem value="discord">Discord</SelectItem>
               </SelectContent>

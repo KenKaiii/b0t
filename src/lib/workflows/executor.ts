@@ -193,32 +193,7 @@ export async function executeWorkflow(
       };
     }
 
-    // Update workflow run with success
-    const completedAt = new Date();
-    await db
-      .update(workflowRunsTable)
-      .set({
-        status: 'success',
-        completedAt,
-        duration: completedAt.getTime() - startedAt.getTime(),
-        output: context.variables ? JSON.stringify(context.variables) : null,
-      })
-      .where(eq(workflowRunsTable.id, runId));
-
-    // Update workflow last run status
-    await db
-      .update(workflowsTable)
-      .set({
-        lastRun: completedAt,
-        lastRunStatus: 'success',
-        lastRunError: null,
-        runCount: workflow.runCount + 1,
-      })
-      .where(eq(workflowsTable.id, workflowId));
-
-    logger.info({ workflowId, runId, duration: completedAt.getTime() - startedAt.getTime() }, 'Workflow execution completed');
-
-    // Return final output - use returnValue if specified, otherwise auto-detect
+    // Extract final output - use returnValue if specified, otherwise auto-detect
     let finalOutput: unknown = context.variables;
     if (config.returnValue) {
       logger.info({ returnValue: config.returnValue }, 'EXECUTOR - Using returnValue');
@@ -252,6 +227,31 @@ export async function executeWorkflow(
         logger.info({ filteredKeys: Object.keys(filteredVars) }, 'EXECUTOR - Filtered output variables');
       }
     }
+
+    // Update workflow run with success
+    const completedAt = new Date();
+    await db
+      .update(workflowRunsTable)
+      .set({
+        status: 'success',
+        completedAt,
+        duration: completedAt.getTime() - startedAt.getTime(),
+        output: finalOutput ? JSON.stringify(finalOutput) : null,
+      })
+      .where(eq(workflowRunsTable.id, runId));
+
+    // Update workflow last run status
+    await db
+      .update(workflowsTable)
+      .set({
+        lastRun: completedAt,
+        lastRunStatus: 'success',
+        lastRunError: null,
+        runCount: workflow.runCount + 1,
+      })
+      .where(eq(workflowsTable.id, workflowId));
+
+    logger.info({ workflowId, runId, duration: completedAt.getTime() - startedAt.getTime() }, 'Workflow execution completed');
 
     return { success: true, output: finalOutput };
   } catch (error) {
@@ -365,7 +365,9 @@ const CATEGORY_FOLDER_MAP: Record<string, string> = {
   'productivity': 'productivity',
   'business': 'business',
   'content': 'content',
+  'dataprocessing': 'dataprocessing',
   'data processing': 'dataprocessing',
+  'devtools': 'devtools',
   'developer tools': 'devtools',
   'dev tools': 'devtools',
   'e-commerce': 'ecommerce',

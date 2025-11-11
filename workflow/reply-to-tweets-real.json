@@ -16,7 +16,7 @@
         "module": "external-apis.rapidapi-twitter.searchTwitter",
         "inputs": {
           "params": {
-            "query": "AI tools OR TypeScript tips OR open source",
+            "query": "AI",
             "apiKey": "{{credential.rapidapi_api_key}}",
             "count": 20,
             "category": "Latest",

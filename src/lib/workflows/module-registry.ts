@@ -1142,6 +1142,51 @@ export function getModuleRegistry(): ModuleCategory[] {
           ],
         },
         {
+          name: 'gmail',
+          functions: [
+            {
+              name: 'fetchEmails',
+              description: "Fetch emails from Gmail with filters",
+              signature: 'fetchEmails(params)',
+            },
+            {
+              name: 'addLabels',
+              description: "Add labels to an email",
+              signature: 'addLabels(params)',
+            },
+            {
+              name: 'removeLabels',
+              description: "Remove labels from an email",
+              signature: 'removeLabels(params)',
+            },
+            {
+              name: 'markAsRead',
+              description: "Mark email as read",
+              signature: 'markAsRead(params)',
+            },
+            {
+              name: 'markAsUnread',
+              description: "Mark email as unread",
+              signature: 'markAsUnread(params)',
+            },
+            {
+              name: 'moveToTrash',
+              description: "Move email to trash",
+              signature: 'moveToTrash(params)',
+            },
+            {
+              name: 'archiveEmail',
+              description: "Archive email (remove from inbox)",
+              signature: 'archiveEmail(params)',
+            },
+            {
+              name: 'getLabels',
+              description: "Get all available labels",
+              signature: 'getLabels(params)',
+            },
+          ],
+        },
+        {
           name: 'intercom',
           functions: [
             {
@@ -1263,6 +1308,56 @@ export function getModuleRegistry(): ModuleCategory[] {
               name: 'getAppStats',
               description: "Execute getAppStats",
               signature: 'getAppStats()',
+            },
+          ],
+        },
+        {
+          name: 'outlook',
+          functions: [
+            {
+              name: 'fetchEmails',
+              description: "Fetch emails from Outlook with filters",
+              signature: 'fetchEmails(params)',
+            },
+            {
+              name: 'updateCategories',
+              description: "Update categories on an email",
+              signature: 'updateCategories(params)',
+            },
+            {
+              name: 'addCategories',
+              description: "Add categories to an email (preserves existing)",
+              signature: 'addCategories(params)',
+            },
+            {
+              name: 'moveToFolder',
+              description: "Move email to a folder",
+              signature: 'moveToFolder(params)',
+            },
+            {
+              name: 'markAsRead',
+              description: "Mark email as read",
+              signature: 'markAsRead(params)',
+            },
+            {
+              name: 'markAsUnread',
+              description: "Mark email as unread",
+              signature: 'markAsUnread(params)',
+            },
+            {
+              name: 'moveToTrash',
+              description: "Move email to deleted items (trash)",
+              signature: 'moveToTrash(params)',
+            },
+            {
+              name: 'getFolders',
+              description: "Get all mail folders",
+              signature: 'getFolders(params)',
+            },
+            {
+              name: 'getCategories',
+              description: "Get all Outlook categories",
+              signature: 'getCategories(params)',
             },
           ],
         },
