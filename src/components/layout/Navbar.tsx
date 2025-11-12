@@ -3,18 +3,20 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Workflows', href: '/dashboard/workflows' },
-  { name: 'Clients', href: '/dashboard/clients' },
-  { name: 'Credentials', href: '/dashboard/credentials' },
-  { name: 'Activity', href: '/dashboard/activity' },
-  { name: 'Settings', href: '/settings' },
-];
+import { useTranslations } from 'next-intl';
 
 export function Navbar() {
+  const t = useTranslations('navigation');
   const pathname = usePathname();
+
+  const navigation = [
+    { name: t('dashboard'), href: '/dashboard' },
+    { name: t('workflows'), href: '/dashboard/workflows' },
+    { name: t('clients'), href: '/dashboard/clients' },
+    { name: t('credentials'), href: '/dashboard/credentials' },
+    { name: t('activity'), href: '/dashboard/activity' },
+    { name: t('settings'), href: '/settings' },
+  ];
   const [activeIndicator, setActiveIndicator] = useState({ left: 0, width: 0 });
   const navRef = useRef<HTMLDivElement>(null);
 

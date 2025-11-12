@@ -8,8 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function SignInPage() {
+  const t = useTranslations('auth');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,12 +32,12 @@ export default function SignInPage() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError(t('invalidCredentials'));
       } else {
         router.push('/dashboard');
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError(t('errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -44,9 +47,9 @@ export default function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <Card className="w-full max-w-sm border-border bg-surface">
         <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-xl font-black tracking-tight">Sign In</CardTitle>
+          <CardTitle className="text-xl font-black tracking-tight">{t('signInTitle')}</CardTitle>
           <CardDescription className="text-xs text-secondary">
-            Enter your credentials to continue
+            {t('signInDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -54,14 +57,14 @@ export default function SignInPage() {
             {/* Email */}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs text-secondary">
-                Email
+                {tCommon('email')}
               </Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('emailPlaceholder')}
                 className="h-9 bg-background border-border text-sm"
                 required
               />
@@ -70,14 +73,14 @@ export default function SignInPage() {
             {/* Password */}
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-xs text-secondary">
-                Password
+                {tCommon('password')}
               </Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder={t('passwordPlaceholder')}
                 className="h-9 bg-background border-border text-sm"
                 required
               />
@@ -99,15 +102,15 @@ export default function SignInPage() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  {t('signingIn')}
                 </>
               ) : (
-                'Sign In'
+                t('signIn')
               )}
             </Button>
 
             <p className="text-center text-[10px] text-secondary mt-4">
-              Single user application
+              {t('singleUserApp')}
             </p>
           </form>
         </CardContent>

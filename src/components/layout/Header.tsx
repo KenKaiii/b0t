@@ -13,8 +13,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogIn, LogOut, Loader2, ChevronDown, Building2 } from 'lucide-react';
 import { SystemStatusBadge } from '@/components/SystemStatusBadge';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useTranslations } from 'next-intl';
 
 export function Header() {
+  const t = useTranslations('common');
   const [currentTime, setCurrentTime] = useState<string>('');
   const [timezone, setTimezone] = useState<string>('');
   const { data: session, status } = useSession();
@@ -84,8 +87,11 @@ export function Header() {
           )}
         </div>
 
-        {/* Right side - Client Switcher & Auth Button */}
+        {/* Right side - Language Switcher, Client Switcher & Auth Button */}
         <div className="flex items-center gap-3">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Client Switcher */}
           {session?.user && clients.length > 0 && (
             <DropdownMenu>
@@ -98,7 +104,7 @@ export function Header() {
                 >
                   <Building2 className="h-3.5 w-3.5 mr-1.5" />
                   <span className="hidden sm:inline">
-                    {currentClient?.name || 'Admin'}
+                    {currentClient?.name || t('admin')}
                   </span>
                   <ChevronDown className="h-3 w-3 ml-1" />
                 </Button>
@@ -109,7 +115,7 @@ export function Header() {
                   className="text-xs cursor-pointer"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span>Admin</span>
+                    <span>{t('admin')}</span>
                     {!currentClient && (
                       <span className="text-blue-500">✓</span>
                     )}
@@ -151,12 +157,12 @@ export function Header() {
             ) : session ? (
               <>
                 <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                Logout
+                {t('logout')}
               </>
             ) : (
               <>
                 <LogIn className="h-3.5 w-3.5 mr-1.5" />
-                Login
+                {t('login')}
               </>
             )}
           </Button>

@@ -1,0 +1,116 @@
+{
+  "common": {
+    "admin": "Administrateur",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "loading": "Chargement",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "actions": "Actions",
+    "status": "Statut",
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Avertissement",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "enabled": "Activé",
+    "disabled": "Désactivé"
+  },
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "workflows": "Flux de travail",
+    "clients": "Clients",
+    "credentials": "Identifiants",
+    "activity": "Activité",
+    "settings": "Paramètres"
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signInTitle": "Se connecter",
+    "signInDescription": "Entrez vos identifiants pour continuer",
+    "signingIn": "Connexion en cours...",
+    "register": "S'inscrire",
+    "invalidCredentials": "Email ou mot de passe invalide",
+    "errorOccurred": "Une erreur s'est produite. Veuillez réessayer.",
+    "emailPlaceholder": "vous@exemple.com",
+    "passwordPlaceholder": "••••••••",
+    "singleUserApp": "Application mono-utilisateur"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "successfulRuns": "Exécutions réussies",
+    "failedRuns": "Exécutions échouées",
+    "activeJobs": "Tâches actives",
+    "totalExecutions": "Exécutions totales",
+    "recentActivity": "Activité récente",
+    "noActivity": "Aucune activité récente",
+    "jobName": "Nom de la tâche",
+    "duration": "Durée",
+    "timestamp": "Horodatage",
+    "justNow": "À l'instant",
+    "minutesAgo": "il y a {count}m",
+    "hoursAgo": "il y a {count}h",
+    "daysAgo": "il y a {count}j"
+  },
+  "workflows": {
+    "title": "Flux de travail",
+    "createWorkflow": "Créer un flux de travail",
+    "editWorkflow": "Modifier le flux de travail",
+    "deleteWorkflow": "Supprimer le flux de travail",
+    "workflowName": "Nom du flux de travail",
+    "description": "Description",
+    "trigger": "Déclencheur",
+    "actions": "Actions",
+    "noWorkflows": "Aucun flux de travail trouvé",
+    "createFirst": "Créez votre premier flux de travail pour commencer"
+  },
+  "clients": {
+    "title": "Clients",
+    "createClient": "Créer un client",
+    "editClient": "Modifier le client",
+    "deleteClient": "Supprimer le client",
+    "clientName": "Nom du client",
+    "noClients": "Aucun client trouvé",
+    "createFirst": "Créez votre premier client pour commencer"
+  },
+  "credentials": {
+    "title": "Identifiants",
+    "addCredential": "Ajouter un identifiant",
+    "editCredential": "Modifier l'identifiant",
+    "deleteCredential": "Supprimer l'identifiant",
+    "credentialName": "Nom de l'identifiant",
+    "service": "Service",
+    "noCredentials": "Aucun identifiant trouvé",
+    "addFirst": "Ajoutez votre premier identifiant pour commencer"
+  },
+  "activity": {
+    "title": "Activité",
+    "logs": "Journaux",
+    "executions": "Exécutions",
+    "noLogs": "Aucun journal d'activité trouvé",
+    "viewDetails": "Voir les détails"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "general": "Général",
+    "profile": "Profil",
+    "preferences": "Préférences",
+    "language": "Langue",
+    "selectLanguage": "Sélectionner la langue",
+    "timezone": "Fuseau horaire",
+    "notifications": "Notifications",
+    "saveChanges": "Enregistrer les modifications",
+    "changesSaved": "Modifications enregistrées avec succès"
+  },
+  "metadata": {
+    "title": "b0t - Créez des automatisations personnalisées",
+    "description": "Plateforme d'automatisation visuelle pour créer des flux de travail personnalisés. Connectez des APIs, services et plateformes pour créer des automatisations puissantes."
+  }
+}

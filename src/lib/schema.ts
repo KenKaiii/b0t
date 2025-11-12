@@ -46,6 +46,7 @@ export const usersTable = pgTable('users', {
   password: varchar('password', { length: 255 }).notNull(),
   name: varchar('name', { length: 255 }),
   emailVerified: integer('email_verified').notNull().default(0),
+  locale: varchar('locale', { length: 10 }).default('en'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({

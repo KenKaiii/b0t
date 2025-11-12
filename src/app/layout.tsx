@@ -3,8 +3,10 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { ClientProvider } from "@/components/providers/ClientProvider";
+import { IntlProvider } from "@/components/providers/IntlProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AppLoader } from "@/components/ui/app-loader";
+import { getLocale, getMessages } from "@/lib/i18n-server";
 
 // Force dynamic rendering for all pages
 export const dynamic = 'force-dynamic';
@@ -35,23 +37,28 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
+
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang={locale} data-scroll-behavior="smooth">
       <body
         className={`${interHeading.variable} ${interBody.variable} ${inter.variable} antialiased`}
       >
-        <AppLoader />
-        <SessionProvider>
-          <ClientProvider>
-            {children}
-          </ClientProvider>
-        </SessionProvider>
-        <Toaster />
+        <IntlProvider locale={locale} messages={messages}>
+          <AppLoader />
+          <SessionProvider>
+            <ClientProvider>
+              {children}
+            </ClientProvider>
+          </SessionProvider>
+          <Toaster />
+        </IntlProvider>
       </body>
     </html>
   );

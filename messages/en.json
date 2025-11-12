@@ -1,0 +1,116 @@
+{
+  "common": {
+    "admin": "Admin",
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "loading": "Loading",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "actions": "Actions",
+    "status": "Status",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "active": "Active",
+    "inactive": "Inactive",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "workflows": "Workflows",
+    "clients": "Clients",
+    "credentials": "Credentials",
+    "activity": "Activity",
+    "settings": "Settings"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signInTitle": "Sign In",
+    "signInDescription": "Enter your credentials to continue",
+    "signingIn": "Signing in...",
+    "register": "Register",
+    "invalidCredentials": "Invalid email or password",
+    "errorOccurred": "An error occurred. Please try again.",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••",
+    "singleUserApp": "Single user application"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "successfulRuns": "Successful Runs",
+    "failedRuns": "Failed Runs",
+    "activeJobs": "Active Jobs",
+    "totalExecutions": "Total Executions",
+    "recentActivity": "Recent Activity",
+    "noActivity": "No recent activity",
+    "jobName": "Job Name",
+    "duration": "Duration",
+    "timestamp": "Timestamp",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
+  },
+  "workflows": {
+    "title": "Workflows",
+    "createWorkflow": "Create Workflow",
+    "editWorkflow": "Edit Workflow",
+    "deleteWorkflow": "Delete Workflow",
+    "workflowName": "Workflow Name",
+    "description": "Description",
+    "trigger": "Trigger",
+    "actions": "Actions",
+    "noWorkflows": "No workflows found",
+    "createFirst": "Create your first workflow to get started"
+  },
+  "clients": {
+    "title": "Clients",
+    "createClient": "Create Client",
+    "editClient": "Edit Client",
+    "deleteClient": "Delete Client",
+    "clientName": "Client Name",
+    "noClients": "No clients found",
+    "createFirst": "Create your first client to get started"
+  },
+  "credentials": {
+    "title": "Credentials",
+    "addCredential": "Add Credential",
+    "editCredential": "Edit Credential",
+    "deleteCredential": "Delete Credential",
+    "credentialName": "Credential Name",
+    "service": "Service",
+    "noCredentials": "No credentials found",
+    "addFirst": "Add your first credential to get started"
+  },
+  "activity": {
+    "title": "Activity",
+    "logs": "Logs",
+    "executions": "Executions",
+    "noLogs": "No activity logs found",
+    "viewDetails": "View Details"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "language": "Language",
+    "selectLanguage": "Select Language",
+    "timezone": "Timezone",
+    "notifications": "Notifications",
+    "saveChanges": "Save Changes",
+    "changesSaved": "Changes saved successfully"
+  },
+  "metadata": {
+    "title": "b0t - Build Custom Automations",
+    "description": "Visual automation platform for building custom workflows. Connect APIs, services, and platforms to create powerful automations."
+  }
+}

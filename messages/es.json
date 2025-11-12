@@ -1,0 +1,116 @@
+{
+  "common": {
+    "admin": "Administrador",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "loading": "Cargando",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "actions": "Acciones",
+    "status": "Estado",
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Advertencia",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "enabled": "Habilitado",
+    "disabled": "Deshabilitado"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "workflows": "Flujos de trabajo",
+    "clients": "Clientes",
+    "credentials": "Credenciales",
+    "activity": "Actividad",
+    "settings": "Configuración"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signInTitle": "Iniciar sesión",
+    "signInDescription": "Ingrese sus credenciales para continuar",
+    "signingIn": "Iniciando sesión...",
+    "register": "Registrarse",
+    "invalidCredentials": "Correo electrónico o contraseña inválidos",
+    "errorOccurred": "Ocurrió un error. Por favor, inténtelo de nuevo.",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "passwordPlaceholder": "••••••••",
+    "singleUserApp": "Aplicación de usuario único"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "successfulRuns": "Ejecuciones exitosas",
+    "failedRuns": "Ejecuciones fallidas",
+    "activeJobs": "Trabajos activos",
+    "totalExecutions": "Ejecuciones totales",
+    "recentActivity": "Actividad reciente",
+    "noActivity": "Sin actividad reciente",
+    "jobName": "Nombre del trabajo",
+    "duration": "Duración",
+    "timestamp": "Marca de tiempo",
+    "justNow": "Justo ahora",
+    "minutesAgo": "hace {count}m",
+    "hoursAgo": "hace {count}h",
+    "daysAgo": "hace {count}d"
+  },
+  "workflows": {
+    "title": "Flujos de trabajo",
+    "createWorkflow": "Crear flujo de trabajo",
+    "editWorkflow": "Editar flujo de trabajo",
+    "deleteWorkflow": "Eliminar flujo de trabajo",
+    "workflowName": "Nombre del flujo de trabajo",
+    "description": "Descripción",
+    "trigger": "Disparador",
+    "actions": "Acciones",
+    "noWorkflows": "No se encontraron flujos de trabajo",
+    "createFirst": "Cree su primer flujo de trabajo para comenzar"
+  },
+  "clients": {
+    "title": "Clientes",
+    "createClient": "Crear cliente",
+    "editClient": "Editar cliente",
+    "deleteClient": "Eliminar cliente",
+    "clientName": "Nombre del cliente",
+    "noClients": "No se encontraron clientes",
+    "createFirst": "Cree su primer cliente para comenzar"
+  },
+  "credentials": {
+    "title": "Credenciales",
+    "addCredential": "Agregar credencial",
+    "editCredential": "Editar credencial",
+    "deleteCredential": "Eliminar credencial",
+    "credentialName": "Nombre de la credencial",
+    "service": "Servicio",
+    "noCredentials": "No se encontraron credenciales",
+    "addFirst": "Agregue su primera credencial para comenzar"
+  },
+  "activity": {
+    "title": "Actividad",
+    "logs": "Registros",
+    "executions": "Ejecuciones",
+    "noLogs": "No se encontraron registros de actividad",
+    "viewDetails": "Ver detalles"
+  },
+  "settings": {
+    "title": "Configuración",
+    "general": "General",
+    "profile": "Perfil",
+    "preferences": "Preferencias",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar idioma",
+    "timezone": "Zona horaria",
+    "notifications": "Notificaciones",
+    "saveChanges": "Guardar cambios",
+    "changesSaved": "Cambios guardados exitosamente"
+  },
+  "metadata": {
+    "title": "b0t - Construye automatizaciones personalizadas",
+    "description": "Plataforma de automatización visual para construir flujos de trabajo personalizados. Conecta APIs, servicios y plataformas para crear automatizaciones potentes."
+  }
+}
