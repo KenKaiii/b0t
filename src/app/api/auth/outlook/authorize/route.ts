@@ -62,7 +62,7 @@ export async function GET() {
     // Generate callback URL
     const callbackUrl = process.env.NEXTAUTH_URL
       ? `${process.env.NEXTAUTH_URL}/api/auth/outlook/callback`
-      : 'http://localhost:3000/api/auth/outlook/callback';
+      : 'http://localhost:3123/api/auth/outlook/callback';
 
     // Generate random state for CSRF protection
     const state = crypto.randomBytes(32).toString('hex');

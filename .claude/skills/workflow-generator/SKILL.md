@@ -7,15 +7,17 @@ description: "YOU MUST USE THIS SKILL when the user wants to CREATE or BUILD a N
 
 **Generate complete workflows from simple YAML plans - one command, zero errors.**
 
-## ⚠️ CRITICAL: Use workflow:build
+## ⚠️ CRITICAL: Use API to Build Workflows
 
-**NEVER manually write workflow JSON!** Create a YAML plan and use:
+**NEVER manually write workflow JSON!** Create a YAML plan and use the API:
 
 ```bash
-npm run workflow:build plans/workflow-plan.yaml
+curl -X POST http://localhost:3123/api/workflows/build-from-plan \
+  -H "Content-Type: application/json" \
+  -d '{"planPath": "plans/my-workflow.yaml"}'
 ```
 
-**What it does automatically (12-layer validation):**
+**What the API does automatically (12-layer validation):**
 1. ✅ Validates modules exist in registry
 2. ✅ Validates parameter names match signatures
 3. ✅ Detects unsupported features (rest parameters, function-as-string)
@@ -27,26 +29,26 @@ npm run workflow:build plans/workflow-plan.yaml
 9. ✅ Analyzes credential usage
 10. ✅ Detects unused variables (dead code)
 11. ✅ Runs dry-run test with mocks
-12. ✅ Imports to database (only if all checks pass)
+12. ✅ Automatically imports to database
 
-**Result: If it builds, it WORKS. Zero runtime errors.**
+**Result: If it builds, it's immediately available in the app. Zero runtime errors.**
 
 ---
 
 ## Process Overview
 
 ```
-User Request → Ask Questions → Create YAML Plan → Build Workflow → Done!
-                      ↑                                    ↑
-              Clarify requirements              Automatic validation & import
+User Request → Ask Questions → Create YAML Plan → Call API → Done!
+                      ↑                                ↑
+              Clarify requirements        Automatic build & import via API
 ```
 
 **3 Simple Steps:**
 1. Ask clarifying questions (AskUserQuestion tool)
-2. Create plans/workflow-plan.yaml based on answers
-3. Run: `npm run workflow:build plans/workflow-plan.yaml`
+2. Create plans/my-workflow.yaml based on answers (use Write tool)
+3. Call API: POST http://localhost:3123/api/workflows/build-from-plan with {"planPath": "plans/my-workflow.yaml"}
 
-**Note:** Workflow plans are stored in the `plans/` directory
+**Note:** The API returns the workflow JSON and automatically imports it to the database.
 
 ---
 
@@ -380,7 +382,7 @@ npm run workflow:build plans/workflow-plan.yaml
 ✅ Dry-run completed successfully!
 
 ✅ Workflow imported successfully!
-🎉 View at: http://localhost:3000/dashboard/workflows
+🎉 View at: http://localhost:3123/dashboard/workflows
 ```
 
 **If errors exist:**
@@ -655,10 +657,10 @@ npm run workflow:build plans/workflow-plan.yaml
 ```
 ✅ All steps validated
 ✅ Workflow created and imported!
-   View at: http://localhost:3000/dashboard/workflows
+   View at: http://localhost:3123/dashboard/workflows
 ```
 
-**LLM Response**: "✅ Workflow 'Calculate Number Statistics' created with 5 steps! All modules validated. Ready to use at http://localhost:3000/dashboard/workflows"
+**LLM Response**: "✅ Workflow 'Calculate Number Statistics' created with 5 steps! All modules validated. Ready to use at http://localhost:3123/dashboard/workflows"
 
 ---
 

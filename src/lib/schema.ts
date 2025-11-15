@@ -296,6 +296,40 @@ export const tweetRepliesTable = pgTable('tweet_replies', {
 }));
 
 // ============================================
+// AGENT CHAT TABLES
+// ============================================
+
+// Agent chat sessions table (for Build chat feature)
+export const agentChatSessionsTable = pgTable('agent_chat_sessions', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  organizationId: varchar('organization_id', { length: 255 }),
+  title: varchar('title', { length: 500 }),
+  model: varchar('model', { length: 50 }).notNull().default('sonnet'),
+  sdkSessionId: varchar('sdk_session_id', { length: 255 }),
+  messageCount: integer('message_count').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index('agent_chat_sessions_user_id_idx').on(table.userId),
+  organizationIdIdx: index('agent_chat_sessions_organization_id_idx').on(table.organizationId),
+  createdAtIdx: index('agent_chat_sessions_created_at_idx').on(table.createdAt),
+}));
+
+// Agent chat messages table (stores messages for agent sessions)
+export const agentChatMessagesTable = pgTable('agent_chat_messages', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  sessionId: varchar('session_id', { length: 255 }).notNull(),
+  role: varchar('role', { length: 50 }).notNull(),
+  content: text('content').notNull(),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  sessionIdIdx: index('agent_chat_messages_session_id_idx').on(table.sessionId),
+  createdAtIdx: index('agent_chat_messages_created_at_idx').on(table.createdAt),
+}));
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 
@@ -327,3 +361,7 @@ export type ChatMessage = typeof chatMessagesTable.$inferSelect;
 export type NewChatMessage = typeof chatMessagesTable.$inferInsert;
 export type TweetReply = typeof tweetRepliesTable.$inferSelect;
 export type NewTweetReply = typeof tweetRepliesTable.$inferInsert;
+export type AgentChatSession = typeof agentChatSessionsTable.$inferSelect;
+export type NewAgentChatSession = typeof agentChatSessionsTable.$inferInsert;
+export type AgentChatMessage = typeof agentChatMessagesTable.$inferSelect;
+export type NewAgentChatMessage = typeof agentChatMessagesTable.$inferInsert;

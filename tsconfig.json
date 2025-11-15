@@ -39,6 +39,7 @@
     "src/modules/social/reddit.ts",
     "src/modules/utilities/pdf.ts",
     "tests/templates/**/*.ts",
-    "tests/scripts/check-coverage.ts"
+    "tests/scripts/check-coverage.ts",
+    "scripts/test-multi-org-workflows.ts"
   ]
 }

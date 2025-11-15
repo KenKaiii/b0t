@@ -1,0 +1,28 @@
+name: Auto-Fixer Bug Test
+description: Test cases for reported auto-fixer bugs from battle test
+trigger: manual
+output: json
+steps:
+  - module: utilities.json-transform.pick
+    id: test-pick-correct-obj
+    inputs:
+      obj:
+        name: Alice
+        email: alice@example.com
+        department: Engineering
+      keys:
+        - name
+        - email
+  - module: utilities.json-transform.stringifyJson
+    id: test-rename-with-value
+    inputs:
+      data:
+        test: data
+      pretty: true
+  - module: utilities.array-utils.pluck
+    id: test-correct-arr-param
+    inputs:
+      arr:
+        - name: Bob
+        - name: Carol
+      key: name

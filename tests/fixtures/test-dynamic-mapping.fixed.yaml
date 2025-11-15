@@ -1,0 +1,45 @@
+name: Test Dynamic Parameter Mapping
+description: Test auto-discovery of parameter mappings across all modules
+trigger: manual
+output: json
+steps:
+  - module: utilities.json-transform.stringifyJson
+    id: test-stringify-wrong
+    inputs:
+      data:
+        test: data
+      pretty: true
+  - module: utilities.math.round
+    id: test-round-wrong
+    inputs:
+      value: 3.14159
+      decimals: 2
+  - module: utilities.string-utils.toSlug
+    id: test-slug-wrong
+    inputs:
+      text: Hello World
+  - module: utilities.array-utils.first
+    id: test-first-wrong
+    inputs:
+      arr:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+      count: 3
+  - module: utilities.aggregation.percentile
+    id: test-percentile-wrong
+    inputs:
+      numbers:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+      percent: 75

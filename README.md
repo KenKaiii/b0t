@@ -337,8 +337,8 @@ The setup script creates these automatically. Only change if you know what you'r
 |----------|---------|---------|
 | `AUTH_SECRET` | Session encryption (auto-generated) | - |
 | `ENCRYPTION_KEY` | API key encryption (auto-generated) | - |
-| `DATABASE_URL` | PostgreSQL connection | `postgresql://postgres:postgres@localhost:5433/social_cat_dev` |
-| `REDIS_URL` | Redis connection | `redis://localhost:6379` |
+| `DATABASE_URL` | PostgreSQL connection | `postgresql://postgres:postgres@localhost:5434/b0t_dev` |
+| `REDIS_URL` | Redis connection | `redis://localhost:6380` |
 | `ADMIN_EMAIL` | Initial admin email | `admin@b0t.dev` |
 | `ADMIN_PASSWORD` | Initial admin password | `admin` |
 
@@ -370,9 +370,9 @@ npm run lint
 ### Troubleshooting
 
 **Port conflicts:**
-- PostgreSQL uses port `5433` (not 5432 to avoid conflicts)
-- Redis uses port `6379`
-- Next.js uses port `3000`
+- PostgreSQL uses port `5434` (Docker maps 5434→5432 to avoid conflicts)
+- Redis uses port `6380` (Docker maps 6380→6379 to avoid conflicts)
+- Next.js uses port `3123`
 
 **Docker issues:**
 ```bash

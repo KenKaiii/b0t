@@ -6,38 +6,68 @@ import { logger } from '../logger';
  * Workflow Execution Queue
  *
  * Manages concurrent workflow execution with:
- * - Configurable concurrency (default: 10 workflows at once)
- * - Per-user isolation (each user's workflows are independent)
+ * - Per-organization queue partitioning (prevents noisy neighbor problem)
+ * - Configurable concurrency per organization
  * - Automatic retries on failure
  * - Queue backpressure protection
  *
  * This ensures:
- * - 5 users can run workflows simultaneously without interference
- * - System doesn't get overloaded if 100 workflows are triggered at once
+ * - Each organization has isolated resource pool
+ * - One org's heavy load doesn't impact others
  * - Failed workflows retry automatically
+ * - Admin workflows have dedicated queue
  */
 
 export const WORKFLOW_QUEUE_NAME = 'workflows-execution';
+export const WORKFLOW_QUEUE_PREFIX = 'workflows-execution:';
 
 export interface WorkflowJobData {
   workflowId: string;
   userId: string;
+  organizationId: string | null;  // null = admin workflows
   triggerType: 'manual' | 'cron' | 'webhook' | 'telegram' | 'discord' | 'chat' | 'chat-input' | 'gmail' | 'outlook';
   triggerData?: Record<string, unknown>;
 }
 
 /**
- * Initialize the workflow execution queue and worker
+ * Get queue name for a specific organization
+ * Admin workflows (organizationId = null) use 'workflows-execution:admin'
+ * Org workflows use 'workflows-execution:{orgId}'
+ */
+export function getQueueNameForOrg(organizationId: string | null): string {
+  if (!organizationId) {
+    return `${WORKFLOW_QUEUE_PREFIX}admin`;
+  }
+  return `${WORKFLOW_QUEUE_PREFIX}${organizationId}`;
+}
+
+// Track initialized queues and workers per org
+const initializedQueues = new Set<string>();
+
+// Store queue initialization options globally
+let globalQueueOptions: {
+  concurrency: number;
+  maxJobsPerMinute: number;
+} = {
+  concurrency: 20,
+  maxJobsPerMinute: 300,
+};
+
+/**
+ * Initialize the workflow execution queue system
  * Call this on app startup (once)
  *
+ * This sets up the per-org queue partitioning system.
+ * Queues are created on-demand when workflows are queued.
+ *
  * Scaling configurations:
- * - Development: 20 concurrent workflows (single instance)
- * - Production (vertical): 100 concurrent workflows (single powerful instance)
- * - Production (horizontal): 50 concurrent per worker (multiple worker instances)
+ * - Development: 20 concurrent workflows per org (single instance)
+ * - Production (vertical): 100 concurrent workflows per org (single powerful instance)
+ * - Production (horizontal): 50 concurrent per org per worker (multiple worker instances)
  */
 export async function initializeWorkflowQueue(options?: {
-  concurrency?: number;  // How many workflows to run simultaneously
-  maxJobsPerMinute?: number;  // Rate limit (default: 300)
+  concurrency?: number;  // How many workflows to run simultaneously PER ORG
+  maxJobsPerMinute?: number;  // Rate limit PER ORG (default: 300)
 }) {
   // Environment-based concurrency defaults
   // Development: 20, Production vertical: 100, Production horizontal: 50 per worker
@@ -47,8 +77,10 @@ export async function initializeWorkflowQueue(options?: {
     10
   );
 
-  const concurrency = options?.concurrency || defaultConcurrency;
-  const maxJobsPerMinute = options?.maxJobsPerMinute || 300;
+  globalQueueOptions = {
+    concurrency: options?.concurrency || defaultConcurrency,
+    maxJobsPerMinute: options?.maxJobsPerMinute || 300,
+  };
 
   if (!process.env.REDIS_URL) {
     logger.warn('REDIS_URL not set - workflow queue disabled, falling back to direct execution');
@@ -58,25 +90,62 @@ export async function initializeWorkflowQueue(options?: {
   try {
     // Log concurrency settings with optimization status
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🔄 Workflow queue ready (concurrency: ${concurrency}, rate: ${maxJobsPerMinute}/min)`);
+      console.log(
+        `🔄 Workflow queue ready (per-org concurrency: ${globalQueueOptions.concurrency}, ` +
+        `rate: ${globalQueueOptions.maxJobsPerMinute}/min per org)`
+      );
     } else {
       logger.info(
-        { concurrency, maxJobsPerMinute },
-        'Initializing workflow queue with concurrency settings'
+        globalQueueOptions,
+        'Initializing per-org workflow queue system'
       );
     }
 
     // Always log optimization status
     logger.info({
-      concurrency,
-      maxJobsPerMinute,
+      ...globalQueueOptions,
       environment: process.env.NODE_ENV || 'development',
-      optimization: 'WORKFLOW_QUEUE_CONCURRENCY',
+      optimization: 'PER_ORG_QUEUE_PARTITIONING',
       overridden: !!options?.concurrency
-    }, `✅ Workflow queue concurrency: ${concurrency} parallel workflows`);
+    }, `✅ Per-org workflow queue: ${globalQueueOptions.concurrency} parallel workflows per org`);
 
-    // Create queue for workflow execution
-    createQueue(WORKFLOW_QUEUE_NAME, {
+    return true;
+  } catch (error) {
+    // Provide detailed error logging
+    logger.error(
+      {
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : error
+      },
+      'Failed to initialize workflow queue system'
+    );
+    return false;
+  }
+}
+
+/**
+ * Initialize queue and worker for a specific organization
+ * Called on-demand when first workflow is queued for an org
+ */
+async function initializeQueueForOrg(organizationId: string | null): Promise<boolean> {
+  const queueName = getQueueNameForOrg(organizationId);
+
+  // Skip if already initialized
+  if (initializedQueues.has(queueName)) {
+    return true;
+  }
+
+  try {
+    logger.info(
+      { queueName, organizationId: organizationId || 'admin' },
+      'Initializing queue for organization'
+    );
+
+    // Create queue for this organization
+    createQueue(queueName, {
       defaultJobOptions: {
         attempts: 3,  // Retry failed workflows 3 times
         backoff: {
@@ -94,17 +163,18 @@ export async function initializeWorkflowQueue(options?: {
       },
     });
 
-    // Create worker to process workflows
+    // Create worker to process workflows for this organization
     const worker = createWorker<WorkflowJobData>(
-      WORKFLOW_QUEUE_NAME,
+      queueName,
       async (job) => {
-        const { workflowId, userId, triggerType, triggerData } = job.data;
+        const { workflowId, userId, organizationId, triggerType, triggerData } = job.data;
 
         logger.info(
           {
             jobId: job.id,
             workflowId,
             userId,
+            organizationId: organizationId || 'admin',
             triggerType,
             attempt: job.attemptsMade + 1,
             action: 'workflow_execution_started',
@@ -128,6 +198,7 @@ export async function initializeWorkflowQueue(options?: {
               jobId: job.id,
               workflowId,
               userId,
+              organizationId: organizationId || 'admin',
               action: 'workflow_execution_completed',
               timestamp: new Date().toISOString(),
               metadata: { triggerType, duration: Date.now() - job.timestamp }
@@ -142,6 +213,7 @@ export async function initializeWorkflowQueue(options?: {
               jobId: job.id,
               workflowId,
               userId,
+              organizationId: organizationId || 'admin',
               action: 'workflow_execution_failed',
               timestamp: new Date().toISOString(),
               attempt: job.attemptsMade + 1,
@@ -155,9 +227,9 @@ export async function initializeWorkflowQueue(options?: {
         }
       },
       {
-        concurrency,  // Run N workflows concurrently
+        concurrency: globalQueueOptions.concurrency,  // Run N workflows concurrently per org
         limiter: {
-          max: maxJobsPerMinute,  // Max jobs per minute
+          max: globalQueueOptions.maxJobsPerMinute,  // Max jobs per minute per org
           duration: 60000,
         },
       }
@@ -171,6 +243,7 @@ export async function initializeWorkflowQueue(options?: {
             jobId: job.id,
             workflowId: job.data.workflowId,
             userId: job.data.userId,
+            organizationId: job.data.organizationId || 'admin',
             action: 'workflow_retry_scheduled',
             timestamp: new Date().toISOString(),
             attempt: job.attemptsMade + 1,
@@ -181,7 +254,14 @@ export async function initializeWorkflowQueue(options?: {
       }
     });
 
-    // Worker starts automatically when created
+    // Mark as initialized
+    initializedQueues.add(queueName);
+
+    logger.info(
+      { queueName, organizationId: organizationId || 'admin' },
+      'Queue and worker initialized for organization'
+    );
+
     return true;
   } catch (error) {
     // Provide detailed error logging
@@ -202,7 +282,7 @@ export async function initializeWorkflowQueue(options?: {
 /**
  * Queue a workflow for execution
  *
- * This adds the workflow to the queue instead of executing it immediately.
+ * This adds the workflow to the per-org queue instead of executing it immediately.
  * The worker will pick it up and execute it based on concurrency settings.
  */
 export async function queueWorkflowExecution(
@@ -213,6 +293,7 @@ export async function queueWorkflowExecution(
   options?: {
     priority?: number;  // Lower number = higher priority (default: 5)
     delay?: number;     // Delay execution by N milliseconds
+    organizationId?: string | null;  // Optional: provide if already known to avoid DB query
   }
 ): Promise<{ jobId: string; queued: boolean }> {
   try {
@@ -235,18 +316,46 @@ export async function queueWorkflowExecution(
       return { jobId: 'direct-execution', queued: false };
     }
 
-    const queue = queues.get(WORKFLOW_QUEUE_NAME);
-    if (!queue) {
-      throw new Error('Workflow queue not initialized. Call initializeWorkflowQueue() first.');
+    // Get organizationId if not provided
+    let organizationId = options?.organizationId;
+    if (organizationId === undefined) {
+      // Import db and workflowsTable here to avoid circular dependency
+      const { db } = await import('../db');
+      const { workflowsTable } = await import('../schema');
+      const { eq } = await import('drizzle-orm');
+
+      const workflow = await db
+        .select({ organizationId: workflowsTable.organizationId })
+        .from(workflowsTable)
+        .where(eq(workflowsTable.id, workflowId))
+        .limit(1);
+
+      if (!workflow || workflow.length === 0) {
+        throw new Error(`Workflow ${workflowId} not found`);
+      }
+
+      organizationId = workflow[0].organizationId;
     }
 
-    // Add workflow to queue
+    // Initialize queue for this organization if needed
+    await initializeQueueForOrg(organizationId);
+
+    // Get the queue name for this organization
+    const queueName = getQueueNameForOrg(organizationId);
+    const queue = queues.get(queueName);
+
+    if (!queue) {
+      throw new Error(`Workflow queue not initialized for organization: ${organizationId || 'admin'}`);
+    }
+
+    // Add workflow to org-specific queue
     const job = await addJob<WorkflowJobData>(
-      WORKFLOW_QUEUE_NAME,
+      queueName,
       `workflow-${workflowId}`,
       {
         workflowId,
         userId,
+        organizationId,
         triggerType,
         triggerData,
       },
@@ -261,6 +370,8 @@ export async function queueWorkflowExecution(
         jobId: job.id,
         workflowId,
         userId,
+        organizationId: organizationId || 'admin',
+        queueName,
         action: 'workflow_queued',
         timestamp: new Date().toISOString(),
         metadata: {
@@ -290,37 +401,98 @@ export async function queueWorkflowExecution(
 }
 
 /**
- * Get queue statistics
+ * Get queue statistics for a specific organization
+ * If no organizationId provided, returns aggregated stats across all queues
  */
-export async function getWorkflowQueueStats() {
-  const queue = queues.get(WORKFLOW_QUEUE_NAME);
-  if (!queue) {
+export async function getWorkflowQueueStats(organizationId?: string | null) {
+  if (organizationId !== undefined) {
+    // Get stats for specific org
+    const queueName = getQueueNameForOrg(organizationId);
+    const queue = queues.get(queueName);
+    if (!queue) {
+      return null;
+    }
+
+    const [waiting, active, completed, failed, delayed] = await Promise.all([
+      queue.getWaitingCount(),
+      queue.getActiveCount(),
+      queue.getCompletedCount(),
+      queue.getFailedCount(),
+      queue.getDelayedCount(),
+    ]);
+
+    return {
+      organizationId: organizationId || 'admin',
+      waiting,    // Jobs waiting to be processed
+      active,     // Currently executing workflows
+      completed,  // Successfully completed
+      failed,     // Failed after retries
+      delayed,    // Scheduled for future execution
+      total: waiting + active + delayed,
+    };
+  }
+
+  // Aggregate stats across all workflow queues
+  const allQueues = Array.from(queues.entries()).filter(([name]) =>
+    name.startsWith(WORKFLOW_QUEUE_PREFIX)
+  );
+
+  if (allQueues.length === 0) {
     return null;
   }
 
-  const [waiting, active, completed, failed, delayed] = await Promise.all([
-    queue.getWaitingCount(),
-    queue.getActiveCount(),
-    queue.getCompletedCount(),
-    queue.getFailedCount(),
-    queue.getDelayedCount(),
-  ]);
+  let totalWaiting = 0;
+  let totalActive = 0;
+  let totalCompleted = 0;
+  let totalFailed = 0;
+  let totalDelayed = 0;
+
+  const perOrgStats: Array<{
+    organizationId: string;
+    waiting: number;
+    active: number;
+  }> = [];
+
+  for (const [queueName, queue] of allQueues) {
+    const [waiting, active, completed, failed, delayed] = await Promise.all([
+      queue.getWaitingCount(),
+      queue.getActiveCount(),
+      queue.getCompletedCount(),
+      queue.getFailedCount(),
+      queue.getDelayedCount(),
+    ]);
+
+    totalWaiting += waiting;
+    totalActive += active;
+    totalCompleted += completed;
+    totalFailed += failed;
+    totalDelayed += delayed;
+
+    // Extract org ID from queue name
+    const orgId = queueName.replace(WORKFLOW_QUEUE_PREFIX, '');
+    perOrgStats.push({
+      organizationId: orgId,
+      waiting,
+      active,
+    });
+  }
 
   return {
-    waiting,    // Jobs waiting to be processed
-    active,     // Currently executing workflows
-    completed,  // Successfully completed
-    failed,     // Failed after retries
-    delayed,    // Scheduled for future execution
-    total: waiting + active + delayed,
+    waiting: totalWaiting,
+    active: totalActive,
+    completed: totalCompleted,
+    failed: totalFailed,
+    delayed: totalDelayed,
+    total: totalWaiting + totalActive + totalDelayed,
+    perOrg: perOrgStats,
   };
 }
 
 /**
- * Check if workflow queue is available
+ * Check if workflow queue system is available
  */
 export function isWorkflowQueueAvailable(): boolean {
-  return !!process.env.REDIS_URL && queues.has(WORKFLOW_QUEUE_NAME);
+  return !!process.env.REDIS_URL;
 }
 
 /**

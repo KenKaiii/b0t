@@ -1,0 +1,1 @@
+ALTER TABLE "agent_chat_sessions" ADD COLUMN "sdk_session_id" varchar(255);

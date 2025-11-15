@@ -59,8 +59,8 @@ export const workflowSchema = {
               },
               module: {
                 type: 'string',
-                pattern: '^[a-z-]+\\.[a-z-]+\\.[a-zA-Z]+$',
-                description: 'Module path: category.module.function'
+                pattern: '^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*\\.[a-z][a-zA-Z0-9]*$',
+                description: 'Module path: category.module.function (function name can be camelCase)'
               },
               inputs: {
                 type: 'object',

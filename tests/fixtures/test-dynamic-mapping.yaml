@@ -1,0 +1,39 @@
+name: Test Dynamic Parameter Mapping
+description: Test auto-discovery of parameter mappings across all modules
+trigger: manual
+output: json
+
+steps:
+  # Test 1: JSON transform with wrong param names
+  - module: utilities.json-transform.stringifyJson
+    id: test-stringify-wrong
+    inputs:
+      obj: { test: "data" }  # Wrong! Should be 'data'
+      pretty: true
+
+  # Test 2: Math with wrong param name
+  - module: utilities.math.round
+    id: test-round-wrong
+    inputs:
+      num: 3.14159  # Wrong! Should be 'value'
+      decimals: 2
+
+  # Test 3: String with wrong param name
+  - module: utilities.string-utils.toSlug
+    id: test-slug-wrong
+    inputs:
+      str: "Hello World"  # Wrong! Should be 'text'
+
+  # Test 4: Array with wrong param name
+  - module: utilities.array-utils.first
+    id: test-first-wrong
+    inputs:
+      arr: [1, 2, 3, 4, 5]
+      n: 3  # Wrong! Should be 'count'
+
+  # Test 5: Aggregation with wrong param name
+  - module: utilities.aggregation.percentile
+    id: test-percentile-wrong
+    inputs:
+      numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      percentile: 75  # Wrong! Should be 'percent'

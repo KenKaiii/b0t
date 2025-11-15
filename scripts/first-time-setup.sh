@@ -166,11 +166,11 @@ echo "the web UI at Settings → Credentials after setup."
 echo ""
 
 # Ensure DATABASE_URL and REDIS_URL are set for Docker
-if ! grep -q "DATABASE_URL=postgresql://postgres:postgres@localhost:5433/b0t_dev" .env.local; then
+if ! grep -q "DATABASE_URL=postgresql://postgres:postgres@localhost:5434/b0t_dev" .env.local; then
     echo "" >> .env.local
     echo "# Docker Services (auto-configured)" >> .env.local
-    echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5433/b0t_dev" >> .env.local
-    echo "REDIS_URL=redis://localhost:6379" >> .env.local
+    echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5434/b0t_dev" >> .env.local
+    echo "REDIS_URL=redis://localhost:6380" >> .env.local
     print_success "Added Docker connection strings to .env.local"
 fi
 
@@ -290,8 +290,8 @@ echo -e "${GREEN}   Your development environment is ready!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo "📊 Services Running:"
-echo "   ✓ PostgreSQL:  localhost:5433 (container internal: 5432)"
-echo "   ✓ Redis:       localhost:6379"
+echo "   ✓ PostgreSQL:  localhost:5434 (container internal: 5432)"
+echo "   ✓ Redis:       localhost:6380 (container internal: 6379)"
 echo ""
 echo "🎯 Next Steps:"
 echo ""
@@ -299,7 +299,7 @@ echo "   1. Start the development server:"
 echo -e "      ${BLUE}npm run dev${NC}"
 echo ""
 echo "   2. Open your browser:"
-echo -e "      ${BLUE}http://localhost:3000${NC}"
+echo -e "      ${BLUE}http://localhost:3123${NC}"
 echo ""
 echo "   3. Login with:"
 echo "      Email:    admin@b0t.dev"

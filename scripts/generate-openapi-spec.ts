@@ -80,7 +80,7 @@ function generateOpenAPISpec(): OpenAPISpec {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
+        url: 'http://localhost:3123',
         description: 'Local development server'
       }
     ],

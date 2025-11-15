@@ -1,0 +1,28 @@
+name: Auto-Fixer Bug Test
+description: Test cases for reported auto-fixer bugs from battle test
+trigger: manual
+output: json
+
+steps:
+  # Bug #1: Parameter alias false positive
+  # Should NOT rename 'obj' when it's already correct for pick()
+  - module: utilities.json-transform.pick
+    id: test-pick-correct-obj
+    inputs:
+      obj: { name: "Alice", email: "alice@example.com", department: "Engineering" }
+      keys: [name, email]
+
+  # Bug #2: FIXME placeholder instead of renaming
+  # When parameter name is wrong but has a value, should rename not add FIXME
+  - module: utilities.json-transform.stringifyJson
+    id: test-rename-with-value
+    inputs:
+      obj: { test: "data" }  # Wrong name (should be 'data'), but has value
+      pretty: true
+
+  # Verify correct parameters are not touched
+  - module: utilities.array-utils.pluck
+    id: test-correct-arr-param
+    inputs:
+      arr: [{ name: "Bob" }, { name: "Carol" }]
+      key: name

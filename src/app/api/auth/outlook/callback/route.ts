@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     // Generate callback URL (must match the one in authorize route)
     const callbackUrl = process.env.NEXTAUTH_URL
       ? `${process.env.NEXTAUTH_URL}/api/auth/outlook/callback`
-      : 'http://localhost:3000/api/auth/outlook/callback';
+      : 'http://localhost:3123/api/auth/outlook/callback';
 
     // Exchange authorization code for tokens
     const tokenResponse = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {

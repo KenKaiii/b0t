@@ -78,6 +78,20 @@
       "when": 1763050181045,
       "tag": "0010_odd_sir_ram",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1763100320979,
+      "tag": "0011_nosy_leader",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1763105169134,
+      "tag": "0012_curvy_zaladane",
+      "breakpoints": true
     }
   ]
 }

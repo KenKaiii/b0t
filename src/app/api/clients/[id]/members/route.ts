@@ -129,7 +129,7 @@ export async function POST(
     });
 
     // Generate invitation link
-    const inviteUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/register?token=${token}&email=${encodeURIComponent(email)}`;
+    const inviteUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3123'}/auth/register?token=${token}&email=${encodeURIComponent(email)}`;
 
     // TODO: Send email with invitation link
 

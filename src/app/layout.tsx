@@ -6,6 +6,7 @@ import { ClientProvider } from "@/components/providers/ClientProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AppLoader } from "@/components/ui/app-loader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ChatFAB } from "@/components/agent-chat/ChatFAB";
 
 // Force dynamic rendering for all pages
 export const dynamic = 'force-dynamic';
@@ -54,6 +55,7 @@ export default function RootLayout({
             </ClientProvider>
           </SessionProvider>
         </ErrorBoundary>
+        <ChatFAB />
         <Toaster />
       </body>
     </html>

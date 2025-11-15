@@ -68,7 +68,7 @@ export async function GET() {
     // Generate callback URL
     const callbackUrl = process.env.NEXTAUTH_URL
       ? `${process.env.NEXTAUTH_URL}/api/auth/twitter/callback`
-      : 'http://localhost:3000/api/auth/twitter/callback';
+      : 'http://localhost:3123/api/auth/twitter/callback';
 
     // Generate OAuth 2.0 authorization link with PKCE
     const { url, codeVerifier, state } = client.generateOAuth2AuthLink(

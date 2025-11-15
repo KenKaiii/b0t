@@ -10,11 +10,11 @@ steps:
       expression: "({numbers: [1, 2, 3, 4, 5, 10, 20, 30], text: 'Hello World'})"
     outputAs: testData
 
-  - module: utilities.math.max
+  - module: utilities.array-utils.max
     id: calc-max
     name: Calculate Maximum
     inputs:
-      numbers: "{{testData.numbers}}"
+      arr: "{{testData.numbers}}"
     outputAs: maxValue
 
   - module: utilities.array-utils.sum

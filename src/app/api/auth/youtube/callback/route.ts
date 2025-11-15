@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
     // Initialize Google OAuth2 client
     const callbackUrl = process.env.NEXTAUTH_URL
       ? `${process.env.NEXTAUTH_URL}/api/auth/youtube/callback`
-      : 'http://localhost:3000/api/auth/youtube/callback';
+      : 'http://localhost:3123/api/auth/youtube/callback';
 
     const oauth2Client = new google.auth.OAuth2(
       clientId,

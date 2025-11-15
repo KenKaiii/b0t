@@ -1,0 +1,43 @@
+name: Auto-Fix Test Workflow
+description: Tests all auto-fix capabilities with intentional errors
+trigger: manual
+output: json
+steps:
+  - module: utilities.json-transform.stringifyJson
+    id: test-stringify
+    inputs:
+      data:
+        hello: world
+      pretty: true
+  - module: utilities.json-transform.parseJson
+    id: test-parse
+    inputs:
+      jsonString: "{{test-stringify}}"
+  - module: utilities.datetime.formatDate
+    id: test-format
+    inputs:
+      date: 2025-01-15
+      formatString: yyyy-MM-dd
+  - module: utilities.array-utils.pluck
+    id: test-pluck
+    inputs:
+      arr:
+        - name: Alice
+        - name: Bob
+      key: name
+  - module: ai.ai-sdk.generateText
+    id: test-ai
+    inputs:
+      prompt: Say hello
+      model: gpt-4o-mini
+      provider: openai
+      apiKey: "{{credential.openai_api_key}}"
+  - module: utilities.string-utils.toSlug
+    id: test-slug
+    inputs:
+      text: Hello World
+  - module: utilities.math.round
+    id: test-round
+    inputs:
+      value: 3.14159
+      decimals: 2

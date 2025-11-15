@@ -7,18 +7,18 @@ set -e
 
 echo "🚀 Starting development environment..."
 
-# Check if port 3000 is in use and offer to kill it
-if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
-    echo "⚠️  Port 3000 is already in use"
+# Check if port 3123 is in use and offer to kill it
+if lsof -Pi :3123 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo "⚠️  Port 3123 is already in use"
     echo "💡 Kill existing process? (y/n)"
     read -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "🔪 Killing process on port 3000..."
-        lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+        echo "🔪 Killing process on port 3123..."
+        lsof -ti:3123 | xargs kill -9 2>/dev/null || true
         sleep 1
     else
-        echo "⚠️  Next.js will use the next available port (likely 3001)"
+        echo "⚠️  Next.js will use the next available port"
     fi
 fi
 
@@ -49,9 +49,9 @@ fi
 echo "✅ Docker services running"
 echo ""
 echo "📊 Service URLs:"
-echo "   - App: http://localhost:3000"
-echo "   - PostgreSQL: localhost:5433 (postgres/postgres/b0t_dev)"
-echo "   - Redis: localhost:6379"
+echo "   - App: http://localhost:3123"
+echo "   - PostgreSQL: localhost:5434 (user: postgres, pass: postgres, db: b0t_dev)"
+echo "   - Redis: localhost:6380"
 echo "   - pgAdmin (optional): http://localhost:5050 (admin@b0t.dev/admin)"
 echo "   - Redis Commander (optional): http://localhost:8081"
 echo ""

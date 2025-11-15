@@ -208,10 +208,13 @@ export function DataTable({ data, config, onClose }: DataTableProps) {
         position: 'fixed',
         top: '80px',
         right: '24px',
-        zIndex: 9999,
+        zIndex: 9998,
         display: 'flex',
         gap: '8px',
-        pointerEvents: 'auto'
+        pointerEvents: 'auto',
+        isolation: 'isolate',
+        backfaceVisibility: 'hidden',
+        transform: 'translateZ(0)',
       }}
       onClick={(e) => {
         e.stopPropagation();

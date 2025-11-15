@@ -132,14 +132,16 @@ export function RunOutputModal({
         if (value && typeof value === 'object' && key in value) {
           value = (value as Record<string, unknown>)[key];
         } else {
-          // Path not found, use original output
-          console.warn(`[RunOutputModal] returnValue path "${path}" not found in output, using full output`);
+          // Path not found - this is expected when executor already extracted the value
+          // Only warn if the output doesn't look like it was already extracted
+          if (value === run?.output && typeof value === 'object' && !Array.isArray(value)) {
+            console.warn(`[RunOutputModal] returnValue path "${path}" not found in output, using full output`);
+          }
           value = run?.output;
           break;
         }
       }
 
-      console.log(`[RunOutputModal] Applied returnValue: "${returnValue}", extracted:`, Array.isArray(value) ? `array[${value.length}]` : typeof value);
       processedOutput = value;
     }
   } else if (returnValue && run?.output && Array.isArray(run.output)) {

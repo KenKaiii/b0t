@@ -46,7 +46,7 @@ interface StepPlan {
   module: string;
   id: string;
   name?: string;
-  inputs: Record<string, unknown>;
+  inputs?: Record<string, unknown>;  // Optional - defaults to {} for modules with no params
   outputAs?: string;
 }
 
@@ -72,16 +72,161 @@ function findModuleInRegistry(modulePath: string) {
 }
 
 /**
+ * Module and parameter aliases
+ */
+const MODULE_ALIASES: Record<string, string> = {
+  // Datetime shortcuts
+  'utilities.datetime.format': 'utilities.datetime.formatDate',
+  'utilities.datetime.diffDays': 'utilities.datetime.getDaysDifference',
+  'utilities.datetime.diffHours': 'utilities.datetime.getHoursDifference',
+  'utilities.datetime.diffMinutes': 'utilities.datetime.getMinutesDifference',
+  'utilities.datetime.startOfDay': 'utilities.datetime.getStartOfDay',
+  'utilities.datetime.endOfDay': 'utilities.datetime.getEndOfDay',
+  'utilities.datetime.startOfWeek': 'utilities.datetime.getStartOfWeek',
+  'utilities.datetime.endOfWeek': 'utilities.datetime.getEndOfWeek',
+  'utilities.datetime.startOfMonth': 'utilities.datetime.getStartOfMonth',
+  'utilities.datetime.endOfMonth': 'utilities.datetime.getEndOfMonth',
+
+  // String shortcuts
+  'utilities.string-utils.camelCase': 'utilities.string-utils.toCamelCase',
+  'utilities.string-utils.pascalCase': 'utilities.string-utils.toPascalCase',
+  'utilities.string-utils.snakeCase': 'utilities.string-utils.toSnakeCase',
+  'utilities.string-utils.kebabCase': 'utilities.string-utils.toKebabCase',
+  'utilities.string-utils.slug': 'utilities.string-utils.toSlug',
+
+  // Category corrections
+  'utilities.batching.chunk': 'utilities.array-utils.chunk',
+
+  // JSON transform aliases
+  'utilities.json-transform.stringify': 'utilities.json-transform.stringifyJson',
+  'utilities.json-transform.parse': 'utilities.json-transform.parseJson',
+  'utilities.json-transform.merge': 'utilities.json-transform.deepMerge',
+
+  // Aggregation aliases
+  'utilities.aggregation.stdDev': 'utilities.aggregation.stdDeviation',
+};
+
+const PARAMETER_ALIASES: Record<string, Record<string, string>> = {
+  'utilities.string-utils.toSlug': {
+    'str': 'text',
+  },
+  'utilities.string-utils.truncate': {
+    'length': 'maxLength',
+  },
+  'utilities.array-utils.first': {
+    'n': 'count',
+  },
+  'utilities.array-utils.last': {
+    'n': 'count',
+  },
+  'utilities.aggregation.percentile': {
+    'percentile': 'percent',
+  },
+  'utilities.math.round': {
+    'num': 'value',
+  },
+  'utilities.math.ceil': {
+    'num': 'value',
+  },
+  'utilities.math.floor': {
+    'num': 'value',
+  },
+  'utilities.math.abs': {
+    'num': 'value',
+  },
+  'utilities.math.sqrt': {
+    'num': 'value',
+  },
+  'utilities.control-flow.conditional': {
+    'trueValue': 'trueVal',
+    'falseValue': 'falseVal',
+  },
+};
+
+/**
+ * Validate date-fns format strings
+ */
+function validateDateFormat(formatString: string, stepId: string): string[] {
+  const errors: string[] = [];
+
+  const invalidPatterns = [
+    { pattern: /YYYY/, correct: 'yyyy', desc: 'year' },
+    { pattern: /DD(?!D)/, correct: 'dd', desc: 'day of month' },
+    { pattern: /D(?!D)/, correct: 'd', desc: 'day of month' },
+  ];
+
+  for (const { pattern, correct, desc } of invalidPatterns) {
+    if (pattern.test(formatString)) {
+      errors.push(
+        `Step "${stepId}": Invalid date format string "${formatString}"`,
+        `   Use "${correct}" for ${desc}, not the uppercase version`,
+        `   See: https://date-fns.org/docs/format`
+      );
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Normalize inputs using parameter aliases
+ */
+function normalizeInputs(modulePath: string, inputs: Record<string, unknown>): Record<string, unknown> {
+  const aliases = PARAMETER_ALIASES[modulePath];
+  if (!aliases) return inputs;
+
+  const normalized = { ...inputs };
+  let hasChanges = false;
+
+  for (const [alias, realName] of Object.entries(aliases)) {
+    if (alias in normalized && !(realName in normalized)) {
+      normalized[realName] = normalized[alias];
+      delete normalized[alias];
+      hasChanges = true;
+    }
+  }
+
+  if (hasChanges) {
+    console.log(`   ℹ️  Applied parameter aliases for ${modulePath}`);
+  }
+
+  return normalized;
+}
+
+/**
  * Validate step against module registry
  */
 function validateStep(step: StepPlan, stepIndex: number): string[] {
   const errors: string[] = [];
+
+  // Resolve module aliases
+  const originalModule = step.module;
+  const resolvedModule = MODULE_ALIASES[step.module] || step.module;
+
+  if (resolvedModule !== originalModule) {
+    console.log(`   ℹ️  Step ${stepIndex + 1} ("${step.id}"): Using alias "${originalModule}" → "${resolvedModule}"`);
+    step.module = resolvedModule;
+  }
 
   // Check module exists
   const moduleInfo = findModuleInRegistry(step.module);
   if (!moduleInfo) {
     errors.push(`Step ${stepIndex + 1} ("${step.id}"): Module "${step.module}" not found in registry`);
     return errors;
+  }
+
+  // Normalize parameter names using aliases
+  step.inputs = normalizeInputs(step.module, step.inputs || {});
+
+  // Validate format strings for date-fns modules
+  if (step.module === 'utilities.datetime.formatDate') {
+    const formatString = step.inputs.formatString;
+    if (formatString && typeof formatString === 'string') {
+      const formatErrors = validateDateFormat(formatString, step.id);
+      if (formatErrors.length > 0) {
+        errors.push(...formatErrors);
+      }
+    }
   }
 
   const providedParams = Object.keys(step.inputs);
@@ -94,7 +239,7 @@ function validateStep(step: StepPlan, stepIndex: number): string[] {
 
   if (usesOptionsWrapper || usesParamsWrapper) {
     console.log(`   ℹ️  Step ${stepIndex + 1} ("${step.id}") uses wrapper - inputs will be auto-wrapped`);
-    return []; // Valid - wrapper functions accept flexible inputs
+    return errors; // Return any format errors but skip param validation
   }
 
   // For direct parameter functions, validate
@@ -139,8 +284,21 @@ function generateFilename(name: string): string {
 /**
  * Build workflow from plan
  */
-async function buildWorkflowFromPlan(planFile: string): Promise<void> {
+async function buildWorkflowFromPlan(planFile: string, autoFix: boolean = true): Promise<void> {
   console.log(`\n🔨 Building workflow from plan: ${planFile}\n`);
+
+  // Auto-fix by default (disable with --no-auto-fix)
+  if (autoFix) {
+    console.log('🔧 Running auto-fixer...\n');
+    try {
+      execSync(`npx tsx scripts/auto-fix-workflow-plan.ts --in-place "${planFile}"`, {
+        stdio: 'inherit',
+      });
+      console.log('\n✅ Auto-fix completed\n');
+    } catch {
+      console.error('\n⚠️  Auto-fix had warnings but continuing...\n');
+    }
+  }
 
   // Read and parse plan
   const planPath = resolve(process.cwd(), planFile);
@@ -235,6 +393,9 @@ async function buildWorkflowFromPlan(planFile: string): Promise<void> {
       retries: plan.retries || 0,
       returnValue: plan.returnValue,
       steps: plan.steps.map(step => {
+        // Default inputs to empty object if not provided
+        const inputsWithDefaults = step.inputs || {};
+
         // Check if module uses wrapper (options/params)
         const moduleInfo = findModuleInRegistry(step.module);
         const allParams = moduleInfo?.signature.match(/\(([^)]*)\)/)?.[1] || '';
@@ -242,11 +403,11 @@ async function buildWorkflowFromPlan(planFile: string): Promise<void> {
         const usesParamsWrapper = (allParams === 'params' || allParams.startsWith('params:') || allParams.startsWith('params?'));
 
         // Auto-wrap inputs if module uses options/params wrapper
-        let finalInputs = step.inputs;
+        let finalInputs = inputsWithDefaults;
         if (usesOptionsWrapper) {
-          finalInputs = { options: step.inputs };
+          finalInputs = { options: inputsWithDefaults };
         } else if (usesParamsWrapper) {
-          finalInputs = { params: step.inputs };
+          finalInputs = { params: inputsWithDefaults };
         }
 
         return {
@@ -317,18 +478,24 @@ async function buildWorkflowFromPlan(planFile: string): Promise<void> {
     }
   }
 
-  // Import to database
-  console.log('📦 Importing to database...\n');
-  try {
-    execSync(`npx tsx scripts/import-workflow.ts "${workflowFile}"`, {
-      stdio: 'inherit',
-    });
-  } catch {
-    throw new Error('Workflow import failed');
-  }
+  // Import to database (can be disabled with --skip-import)
+  const skipImport = process.argv.includes('--skip-import');
+  if (!skipImport) {
+    console.log('📦 Importing to database...\n');
+    try {
+      execSync(`npx tsx scripts/import-workflow.ts "${workflowFile}"`, {
+        stdio: 'inherit',
+      });
+    } catch {
+      throw new Error('Workflow import failed');
+    }
 
-  console.log('\n🎉 SUCCESS! Workflow built and imported!\n');
-  console.log(`   View at: http://localhost:3000/dashboard/workflows\n`);
+    console.log('\n🎉 SUCCESS! Workflow built and imported!\n');
+    console.log(`   View at: http://localhost:3123/dashboard/workflows\n`);
+  } else {
+    console.log('\n✅ Workflow JSON created successfully!\n');
+    console.log(`   File: ${workflowFile}\n`);
+  }
 }
 
 // Main
@@ -341,6 +508,11 @@ Build Workflow from Plan - One-command workflow generation
 Usage:
   npm run workflow:build <plan-file.yaml>
   npm run workflow:build <plan-file.json>
+
+Flags:
+  --no-auto-fix    Disable automatic error fixing (auto-fix runs by default)
+  --skip-dry-run   Skip dry-run test
+  --skip-import    Skip database import (just create JSON)
 
 Plan Format (YAML):
   name: Workflow Name
@@ -371,14 +543,26 @@ Example:
 
 Benefits:
   ✅ One YAML file → Complete workflow
+  ✅ Auto-fixes common errors (parameter names, module aliases, etc.)
   ✅ All validation automatic
-  ✅ Zero parameter errors
   ✅ Imports to database automatically
+
+Note: Auto-fix runs automatically to correct common mistakes.
+      Use --no-auto-fix to disable if needed.
   `);
   process.exit(0);
 }
 
-buildWorkflowFromPlan(args[0]).catch((error) => {
+const noAutoFix = args.includes('--no-auto-fix');
+const autoFix = !noAutoFix; // Auto-fix enabled by default
+const planFile = args.find(arg => !arg.startsWith('--'));
+
+if (!planFile) {
+  console.error('Error: No plan file specified');
+  process.exit(1);
+}
+
+buildWorkflowFromPlan(planFile, autoFix).catch((error) => {
   console.error('\n❌ Fatal error:', error.message);
   process.exit(1);
 });

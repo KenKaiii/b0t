@@ -16,7 +16,7 @@ import { resolve } from 'path';
 import { spawn } from 'child_process';
 import { type WorkflowExport } from '../src/lib/workflows/import-export';
 
-const API_URL = process.env.API_URL || 'http://localhost:3000';
+const API_URL = process.env.API_URL || 'http://localhost:3123';
 
 /**
  * Check if server is running
@@ -442,7 +442,7 @@ Options:
   --help             Show this help message
 
 Environment:
-  API_URL            API base URL (default: http://localhost:3000)
+  API_URL            API base URL (default: http://localhost:3123)
 
 Examples:
   # Test existing workflow

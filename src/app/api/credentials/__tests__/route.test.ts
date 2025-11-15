@@ -42,7 +42,7 @@ describe('GET /api/credentials', () => {
     const { auth } = await import('@/lib/auth');
     (auth as any).mockResolvedValue(null);
 
-    const request = new NextRequest('http://localhost:3000/api/credentials');
+    const request = new NextRequest('http://localhost:3123/api/credentials');
     const response = await GET(request);
 
     expect(response.status).toBe(401);
@@ -54,7 +54,7 @@ describe('GET /api/credentials', () => {
     const { auth } = await import('@/lib/auth');
     (auth as any).mockResolvedValue({ user: null });
 
-    const request = new NextRequest('http://localhost:3000/api/credentials');
+    const request = new NextRequest('http://localhost:3123/api/credentials');
     const response = await GET(request);
 
     expect(response.status).toBe(401);
@@ -89,7 +89,7 @@ describe('GET /api/credentials', () => {
 
     (listCredentials as any).mockResolvedValue(mockCredentials);
 
-    const request = new NextRequest('http://localhost:3000/api/credentials');
+    const request = new NextRequest('http://localhost:3123/api/credentials');
     const response = await GET(request);
 
     expect(response.status).toBe(200);
@@ -111,7 +111,7 @@ describe('GET /api/credentials', () => {
     (listCredentials as any).mockResolvedValue([]);
 
     const request = new NextRequest(
-      'http://localhost:3000/api/credentials?organizationId=org-456'
+      'http://localhost:3123/api/credentials?organizationId=org-456'
     );
     const response = await GET(request);
 
@@ -129,7 +129,7 @@ describe('GET /api/credentials', () => {
 
     (listCredentials as any).mockRejectedValue(new Error('Database error'));
 
-    const request = new NextRequest('http://localhost:3000/api/credentials');
+    const request = new NextRequest('http://localhost:3123/api/credentials');
     const response = await GET(request);
 
     expect(response.status).toBe(500);
@@ -147,7 +147,7 @@ describe('POST /api/credentials', () => {
     const { auth } = await import('@/lib/auth');
     (auth as any).mockResolvedValue(null);
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: JSON.stringify({})
     });
@@ -180,7 +180,7 @@ describe('POST /api/credentials', () => {
 
     (storeCredential as any).mockResolvedValue({ id: 'cred-new-123' });
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: JSON.stringify(validData)
     });
@@ -228,7 +228,7 @@ describe('POST /api/credentials', () => {
 
     (storeCredential as any).mockResolvedValue({ id: 'cred-new-456' });
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: JSON.stringify(validData)
     });
@@ -273,7 +273,7 @@ describe('POST /api/credentials', () => {
 
     (storeCredential as any).mockResolvedValue({ id: 'cred-new-789' });
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: JSON.stringify(validData)
     });
@@ -314,7 +314,7 @@ describe('POST /api/credentials', () => {
       }
     });
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: JSON.stringify({ name: 'Invalid' })
     });
@@ -348,7 +348,7 @@ describe('POST /api/credentials', () => {
       }
     });
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: JSON.stringify({
         platform: 'openai',
@@ -382,7 +382,7 @@ describe('POST /api/credentials', () => {
 
     (storeCredential as any).mockRejectedValue(new Error('Database error'));
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: JSON.stringify({
         platform: 'openai',
@@ -420,7 +420,7 @@ describe('POST /api/credentials', () => {
       }
     });
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: JSON.stringify({
         platform: '',
@@ -442,7 +442,7 @@ describe('POST /api/credentials', () => {
       user: { id: 'user-123', email: 'test@example.com' }
     });
 
-    const request = new NextRequest('http://localhost:3000/api/credentials', {
+    const request = new NextRequest('http://localhost:3123/api/credentials', {
       method: 'POST',
       body: 'invalid-json'
     });
@@ -477,7 +477,7 @@ describe('credential security', () => {
 
     (listCredentials as any).mockResolvedValue(mockCredentials);
 
-    const request = new NextRequest('http://localhost:3000/api/credentials');
+    const request = new NextRequest('http://localhost:3123/api/credentials');
     const response = await GET(request);
 
     const json = await response.json();
@@ -500,7 +500,7 @@ describe('credential security', () => {
 
     (listCredentials as any).mockResolvedValue([]);
 
-    const request = new NextRequest('http://localhost:3000/api/credentials');
+    const request = new NextRequest('http://localhost:3123/api/credentials');
     await GET(request);
 
     // Verify userId from session is used

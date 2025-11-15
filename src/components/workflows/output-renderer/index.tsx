@@ -132,9 +132,12 @@ function FloatingActionButtons({
         position: 'fixed',
         top: '80px',
         right: '24px',
-        zIndex: 9999,
+        zIndex: 9998,
         display: 'flex',
-        gap: '8px'
+        gap: '8px',
+        isolation: 'isolate',
+        backfaceVisibility: 'hidden',
+        transform: 'translateZ(0)',
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -350,25 +353,36 @@ function JSONDisplay({ data, onClose }: { data: unknown; onClose?: () => void })
     }
   }
 
+  // Ensure jsonData is a valid object or array for ReactJson
+  const isValidJson = jsonData !== null &&
+                      jsonData !== undefined &&
+                      typeof jsonData === 'object';
+
   const jsonString = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
 
   return (
     <>
       <FloatingActionButtons content={jsonString} filename="output" format="json" onClose={onClose} />
       <div className="rounded-lg border border-border/50 bg-muted/20 p-4 overflow-y-auto max-h-[70vh]">
-        <ReactJson
-          src={jsonData as object}
-          theme="monokai"
-          iconStyle="circle"
-          displayDataTypes={false}
-          displayObjectSize={false}
-          enableClipboard={true}
-          collapsed={2}
-          style={{
-            backgroundColor: 'transparent',
-            fontSize: '0.875rem',
-          }}
-        />
+        {isValidJson ? (
+          <ReactJson
+            src={jsonData as object}
+            theme="monokai"
+            iconStyle="circle"
+            displayDataTypes={false}
+            displayObjectSize={false}
+            enableClipboard={true}
+            collapsed={2}
+            style={{
+              backgroundColor: 'transparent',
+              fontSize: '0.875rem',
+            }}
+          />
+        ) : (
+          <pre className="text-sm font-mono text-foreground whitespace-pre-wrap">
+            {jsonString}
+          </pre>
+        )}
       </div>
     </>
   );

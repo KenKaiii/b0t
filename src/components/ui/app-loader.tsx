@@ -32,10 +32,12 @@ export function AppLoader() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-background flex items-center justify-center transition-all duration-[600ms] ease-out"
+      className="fixed inset-0 z-[10000] bg-background flex items-center justify-center transition-all duration-[600ms] ease-out"
       style={{
         opacity: isFadingOut ? 0 : 1,
         transform: isFadingOut ? 'scale(0.95)' : 'scale(1)',
+        isolation: 'isolate',
+        backfaceVisibility: 'hidden',
       }}
     >
       {/* Darkened gradient overlay */}

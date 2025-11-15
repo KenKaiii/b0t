@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
     // Generate callback URL (must match the one used in authorize)
     const callbackUrl = process.env.NEXTAUTH_URL
       ? `${process.env.NEXTAUTH_URL}/api/auth/twitter/callback`
-      : 'http://localhost:3000/api/auth/twitter/callback';
+      : 'http://localhost:3123/api/auth/twitter/callback';
 
     // Exchange code for tokens
     const {
