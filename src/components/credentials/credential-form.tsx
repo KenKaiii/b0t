@@ -6,14 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { PLATFORM_CONFIGS, getPlatformsByCategory } from '@/lib/workflows/platform-configs';
 import { useClient } from '@/components/providers/ClientProvider';
+import { getOAuthCallbackUrl, getOAuthCallbackConfig } from '@/lib/oauth-callback-urls';
+import { Copy, Check, ExternalLink, ChevronsUpDown } from 'lucide-react';
 
 interface CredentialFormProps {
   onSuccess: () => void;
@@ -21,18 +29,36 @@ interface CredentialFormProps {
 
 export function CredentialForm({ onSuccess }: CredentialFormProps) {
   const { currentClient } = useClient();
-  const [platform, setPlatform] = useState('openai');
+  const [platform, setPlatform] = useState('');
   const [name, setName] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const platformConfig = PLATFORM_CONFIGS[platform];
+  const platformConfig = platform ? PLATFORM_CONFIGS[platform] : null;
   const platformsByCategory = getPlatformsByCategory();
+  const oauthConfig = platform ? getOAuthCallbackConfig(platform) : null;
+  const callbackUrl = platform ? getOAuthCallbackUrl(platform) : null;
+
+  const handleCopyCallback = async () => {
+    if (callbackUrl) {
+      await navigator.clipboard.writeText(callbackUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!platformConfig) {
+      setError('Please select a platform');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -92,51 +118,113 @@ export function CredentialForm({ onSuccess }: CredentialFormProps) {
     setPlatform(newPlatform);
     setFields({}); // Reset fields when platform changes
     setName('');
+    setOpen(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="platform">Platform</Label>
-        <Select value={platform} onValueChange={handlePlatformChange}>
-          <SelectTrigger id="platform">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px]">
-            {Object.entries(platformsByCategory).map(([category, platforms]) => (
-              <div key={category}>
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  {category}
-                </div>
-                {platforms.map((config) => (
-                  <SelectItem key={config.id} value={config.id}>
-                    {config.name}
-                  </SelectItem>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between font-normal"
+            >
+              {platform
+                ? PLATFORM_CONFIGS[platform]?.name
+                : <span className="text-muted-foreground">Search for your platform...</span>}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+            <Command>
+              <CommandInput placeholder="Search platforms..." className="h-9" />
+              <CommandList>
+                <CommandEmpty>No platform found.</CommandEmpty>
+                {Object.entries(platformsByCategory).map(([category, platforms]) => (
+                  <CommandGroup key={category} heading={category}>
+                    {platforms.map((config) => (
+                      <CommandItem
+                        key={config.id}
+                        value={config.name}
+                        onSelect={() => handlePlatformChange(config.id)}
+                      >
+                        {config.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
                 ))}
-              </div>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground">
-          {platformConfig.category} • {platformConfig.fields.length} field{platformConfig.fields.length > 1 ? 's' : ''}
-        </p>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        {platformConfig && (
+          <p className="text-xs text-muted-foreground">
+            {platformConfig.category} • {platformConfig.fields.length} field{platformConfig.fields.length > 1 ? 's' : ''}
+          </p>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="name">Name (Optional)</Label>
-        <Input
-          id="name"
-          placeholder={`My ${platformConfig.name} Credential`}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">
-          Friendly name to identify this credential
-        </p>
-      </div>
+      {platformConfig && (
+        <div className="space-y-2">
+          <Label htmlFor="name">Name (Optional)</Label>
+          <Input
+            id="name"
+            placeholder={`My ${platformConfig.name} Credential`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Friendly name to identify this credential
+          </p>
+        </div>
+      )}
+
+      {/* OAuth Callback URL - shown for platforms that need it */}
+      {oauthConfig && callbackUrl && (
+        <div className="space-y-2 p-3 bg-muted/50 rounded-lg border">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-medium">Redirect URI for {oauthConfig.providerName}</Label>
+            {oauthConfig.setupUrl && (
+              <a
+                href={oauthConfig.setupUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                Setup <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-background px-3 py-2 rounded border font-mono overflow-x-auto">
+              {callbackUrl}
+            </code>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyCallback}
+              className="shrink-0"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-500" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Add this redirect URI to your OAuth app settings
+          </p>
+        </div>
+      )}
 
       {/* Dynamic fields based on platform configuration */}
-      {platformConfig.fields.map((fieldConfig) => (
+      {platformConfig && platformConfig.fields.map((fieldConfig) => (
         <div key={fieldConfig.key} className="space-y-2">
           <Label htmlFor={fieldConfig.key}>
             {fieldConfig.label}
@@ -172,21 +260,25 @@ export function CredentialForm({ onSuccess }: CredentialFormProps) {
         </div>
       ))}
 
-      <div className="pt-2">
-        <p className="text-xs text-muted-foreground mb-3">
-          All credentials are encrypted and stored securely
-        </p>
-      </div>
+      {platformConfig && (
+        <>
+          <div className="pt-2">
+            <p className="text-xs text-muted-foreground mb-3">
+              All credentials are encrypted and stored securely
+            </p>
+          </div>
 
-      {error && (
-        <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-          {error}
-        </div>
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              {error}
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? 'Adding...' : 'Add Credential'}
+          </Button>
+        </>
       )}
-
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? 'Adding...' : 'Add Credential'}
-      </Button>
     </form>
   );
 }

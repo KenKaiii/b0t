@@ -122,7 +122,7 @@ print_step "Step 3/7: Configuring Environment Variables"
 
 if [ ! -f .env.local ]; then
     print_warning ".env.local not found - creating from example"
-    cp .env.local.example .env.local
+    cp .env.example .env.local
     print_success ".env.local created"
 else
     print_success ".env.local already exists"

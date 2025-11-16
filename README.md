@@ -310,7 +310,7 @@ Open **http://localhost:3000** and log in with:
 npm install
 
 # 2. Copy environment template
-cp .env.local.example .env.local
+cp .env.example .env.local
 
 # 3. Generate encryption keys (macOS/Linux)
 echo "AUTH_SECRET=$(openssl rand -base64 32)" >> .env.local

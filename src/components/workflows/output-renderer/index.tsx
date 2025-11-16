@@ -130,11 +130,12 @@ function FloatingActionButtons({
     <div
       style={{
         position: 'fixed',
-        top: '80px',
-        right: '24px',
+        top: '16px',
+        right: '16px',
         zIndex: 9998,
         display: 'flex',
         gap: '8px',
+        pointerEvents: 'auto',
         isolation: 'isolate',
         backfaceVisibility: 'hidden',
         transform: 'translateZ(0)',
@@ -198,7 +199,7 @@ function MarkdownDisplay({ content, onClose }: { content: unknown; onClose?: () 
   return (
     <>
       <FloatingActionButtons content={text} filename="output" format="md" onClose={onClose} />
-      <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border border-border/50 bg-surface/50 p-6">
+      <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border border-border/50 bg-surface/50 p-6 pt-16">
         <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeSanitize]}
@@ -312,7 +313,7 @@ function TextDisplay({ content, onClose }: { content: unknown; onClose?: () => v
   return (
     <>
       <FloatingActionButtons content={text} filename="output" format="txt" onClose={onClose} />
-      <div className="rounded-lg border border-border/50 bg-surface/50 p-4">
+      <div className="rounded-lg border border-border/50 bg-surface/50 p-4 pt-16">
         <div className="text-sm whitespace-pre-wrap break-words">{text}</div>
       </div>
     </>
@@ -329,7 +330,7 @@ function ListDisplay({ data, onClose }: { data: unknown; onClose?: () => void })
   return (
     <>
       <FloatingActionButtons content={text} filename="list-output" format="txt" onClose={onClose} />
-      <div className="rounded-lg border border-border/50 bg-surface/50 p-4">
+      <div className="rounded-lg border border-border/50 bg-surface/50 p-4 pt-16">
         <ul className="space-y-2 list-disc list-inside">
           {data.map((item, idx) => (
             <li key={idx} className="text-sm">
@@ -363,7 +364,7 @@ function JSONDisplay({ data, onClose }: { data: unknown; onClose?: () => void })
   return (
     <>
       <FloatingActionButtons content={jsonString} filename="output" format="json" onClose={onClose} />
-      <div className="rounded-lg border border-border/50 bg-muted/20 p-4 overflow-y-auto max-h-[70vh]">
+      <div className="rounded-lg border border-border/50 bg-muted/20 p-4 pt-16 overflow-y-auto max-h-[70vh]">
         {isValidJson ? (
           <ReactJson
             src={jsonData as object}

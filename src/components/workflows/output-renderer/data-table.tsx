@@ -206,8 +206,8 @@ export function DataTable({ data, config, onClose }: DataTableProps) {
     <div
       style={{
         position: 'fixed',
-        top: '80px',
-        right: '24px',
+        top: '16px',
+        right: '16px',
         zIndex: 9998,
         display: 'flex',
         gap: '8px',
@@ -271,7 +271,7 @@ export function DataTable({ data, config, onClose }: DataTableProps) {
     <>
       {floatingButtons}
       {/* Scrollable table container */}
-      <div className="w-full -mx-6">
+      <div className="w-full -mx-6 pt-12">
         <div className="w-full overflow-x-auto px-6" ref={scrollContainerRef}>
         <div className="relative overflow-hidden rounded-lg border-0 bg-gradient-to-br from-primary/5 via-blue-500/3 to-primary/5 backdrop-blur-sm shadow-sm">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-blue-400 to-primary opacity-80" />
