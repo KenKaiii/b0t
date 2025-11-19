@@ -1,0 +1,2 @@
+CREATE INDEX "chat_conversations_workflow_status_idx" ON "chat_conversations" USING btree ("workflow_id","status");--> statement-breakpoint
+CREATE INDEX "chat_conversations_status_idx" ON "chat_conversations" USING btree ("status");

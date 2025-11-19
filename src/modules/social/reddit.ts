@@ -1,4 +1,3 @@
-import Snoowrap from 'snoowrap';
 import { createCircuitBreaker } from '@/lib/resilience';
 import { createRateLimiter, withRateLimit } from '@/lib/rate-limiter';
 import { logger } from '@/lib/logger';
@@ -20,43 +19,8 @@ import { logger } from '@/lib/logger';
  * - Marketing automation
  *
  * SECURITY NOTE:
- * This module uses snoowrap@1.23.0, which has a known SSRF vulnerability (unmaintained since 2022).
- * The Reddit module is OPTIONAL and only initializes if credentials are provided.
- * Risk mitigation:
- * - Only use with trusted Reddit credentials
- * - Do not expose Reddit functionality to untrusted users
- * - Consider migrating to direct Reddit API calls or maintained alternative
- * TODO: Replace with maintained alternative or direct API implementation
+ * This module uses direct Reddit API calls via fetch to avoid dependencies with vulnerabilities.
  */
-
-const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID;
-const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET;
-const REDDIT_USERNAME = process.env.REDDIT_USERNAME;
-const REDDIT_PASSWORD = process.env.REDDIT_PASSWORD;
-const REDDIT_USER_AGENT = process.env.REDDIT_USER_AGENT || 'b0t:v1.0.0 (by /u/bot)';
-
-if (
-  !REDDIT_CLIENT_ID ||
-  !REDDIT_CLIENT_SECRET ||
-  !REDDIT_USERNAME ||
-  !REDDIT_PASSWORD
-) {
-  logger.warn('⚠️  Reddit credentials not set. Reddit features will not work.');
-}
-
-const redditClient =
-  REDDIT_CLIENT_ID &&
-  REDDIT_CLIENT_SECRET &&
-  REDDIT_USERNAME &&
-  REDDIT_PASSWORD
-    ? new Snoowrap({
-        clientId: REDDIT_CLIENT_ID,
-        clientSecret: REDDIT_CLIENT_SECRET,
-        username: REDDIT_USERNAME,
-        password: REDDIT_PASSWORD,
-        userAgent: REDDIT_USER_AGENT,
-      })
-    : null;
 
 // Rate limiter: Reddit allows ~60 req/min for authenticated users
 const redditRateLimiter = createRateLimiter({
@@ -67,6 +31,14 @@ const redditRateLimiter = createRateLimiter({
   reservoirRefreshInterval: 60 * 1000,
   id: 'reddit',
 });
+
+export interface RedditCredentials {
+  clientId: string;
+  clientSecret: string;
+  username: string;
+  password: string;
+  userAgent?: string;
+}
 
 export interface RedditPost {
   id: string;
@@ -87,6 +59,134 @@ export interface RedditSubmitOptions {
   url?: string;
   flairId?: string;
   sendReplies?: boolean;
+  credentials?: RedditCredentials;
+}
+
+export interface RedditCommentOptions {
+  postId: string;
+  text: string;
+  credentials?: RedditCredentials;
+}
+
+export interface RedditReplyOptions {
+  commentId: string;
+  text: string;
+  credentials?: RedditCredentials;
+}
+
+export interface RedditGetPostsOptions {
+  subreddit: string;
+  sort?: 'hot' | 'new' | 'top' | 'rising';
+  limit?: number;
+  credentials?: RedditCredentials;
+}
+
+export interface RedditSearchOptions {
+  query: string;
+  subreddit?: string;
+  limit?: number;
+  credentials?: RedditCredentials;
+}
+
+export interface RedditVoteOptions {
+  postId: string;
+  credentials?: RedditCredentials;
+}
+
+class RedditClient {
+  private accessToken: string | null = null;
+  private tokenExpiresAt: number = 0;
+  private credentials: RedditCredentials;
+
+  constructor(credentials: RedditCredentials) {
+    this.credentials = credentials;
+  }
+
+  private async getAccessToken(): Promise<string> {
+    if (this.accessToken && Date.now() < this.tokenExpiresAt) {
+      return this.accessToken;
+    }
+
+    logger.info('Refreshing Reddit access token');
+
+    const { clientId, clientSecret, username, password } = this.credentials;
+    const userAgent = this.credentials.userAgent || 'b0t:v1.0.0 (by /u/bot)';
+
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const params = new URLSearchParams();
+    params.append('grant_type', 'password');
+    params.append('username', username);
+    params.append('password', password);
+
+    const response = await fetch('https://www.reddit.com/api/v1/access_token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'User-Agent': userAgent,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to get Reddit access token: ${response.status} ${text}`);
+    }
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(`Reddit auth error: ${data.error}`);
+    }
+
+    this.accessToken = data.access_token;
+    // Expire slightly before actual expiration (usually 3600s)
+    this.tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000;
+
+    return this.accessToken!;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async request(endpoint: string, options: RequestInit = {}): Promise<any> {
+    const token = await this.getAccessToken();
+
+    const url = endpoint.startsWith('http') ? endpoint : `https://oauth.reddit.com${endpoint}`;
+    const userAgent = this.credentials.userAgent || 'b0t:v1.0.0 (by /u/bot)';
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`,
+        'User-Agent': userAgent,
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Reddit API error: ${response.status} ${text}`);
+    }
+
+    return response.json();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async post(endpoint: string, form: Record<string, any>): Promise<any> {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(form)) {
+      if (value !== undefined) {
+        params.append(key, String(value));
+      }
+    }
+
+    return this.request(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params,
+    });
+  }
 }
 
 /**
@@ -95,9 +195,11 @@ export interface RedditSubmitOptions {
 async function submitPostInternal(
   options: RedditSubmitOptions
 ): Promise<RedditPost> {
-  if (!redditClient) {
-    throw new Error('Reddit client not initialized. Set Reddit credentials.');
+  if (!options.credentials) {
+    throw new Error('Reddit credentials are required');
   }
+
+  const client = new RedditClient(options.credentials);
 
   logger.info(
     {
@@ -108,42 +210,35 @@ async function submitPostInternal(
     'Submitting Reddit post'
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const subreddit: any = await (redditClient.getSubreddit(options.subreddit) as any);
+  const response = await client.post('/api/submit', {
+    sr: options.subreddit,
+    title: options.title,
+    kind: options.url ? 'link' : 'self',
+    url: options.url,
+    text: options.text,
+    flair_id: options.flairId,
+    sendreplies: options.sendReplies,
+    api_type: 'json',
+  });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let submission: any;
-
-  if (options.url) {
-    const linkSubmission = await subreddit.submitLink({
-      title: options.title,
-      url: options.url,
-      flairId: options.flairId,
-      sendReplies: options.sendReplies,
-    });
-    submission = linkSubmission as never;
-  } else {
-    const selfSubmission = await subreddit.submitSelfpost({
-      title: options.title,
-      text: options.text || '',
-      flairId: options.flairId,
-      sendReplies: options.sendReplies,
-    });
-    submission = selfSubmission as never;
+  if (response.json.errors && response.json.errors.length > 0) {
+    throw new Error(`Reddit submit error: ${JSON.stringify(response.json.errors)}`);
   }
+
+  const submission = response.json.data;
 
   logger.info({ postId: submission.id }, 'Reddit post submitted');
 
   return {
     id: submission.id,
-    title: submission.title,
-    selftext: submission.selftext,
+    title: options.title, // API response might be minimal, use input
+    selftext: options.text || '',
     url: submission.url,
-    author: submission.author.name,
-    subreddit: submission.subreddit.display_name,
-    score: submission.score,
-    numComments: submission.num_comments,
-    permalink: `https://reddit.com${submission.permalink}`,
+    author: options.credentials.username, // We know who posted it
+    subreddit: options.subreddit,
+    score: 1,
+    numComments: 0,
+    permalink: `https://reddit.com${submission.url}`, // Usually redirects
   };
 }
 
@@ -167,110 +262,121 @@ export async function submitPost(
 }
 
 /**
- * Comment on post
+ * Comment on post (internal implementation)
  */
-export async function commentOnPost(
-  postId: string,
-  text: string
+async function commentOnPostInternal(
+  options: RedditCommentOptions
 ): Promise<{ id: string; permalink: string }> {
-  if (!redditClient) {
-    throw new Error('Reddit client not initialized. Set Reddit credentials.');
+  if (!options.credentials) {
+    throw new Error('Reddit credentials are required');
   }
 
-  logger.info({ postId, textLength: text.length }, 'Commenting on Reddit post');
+  const client = new RedditClient(options.credentials);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const submission: any = await (redditClient.getSubmission(postId) as any);
-  const comment = (await submission.reply(text)) as unknown as { id: string; permalink: string };
+  logger.info({ postId: options.postId, textLength: options.text.length }, 'Commenting on Reddit post');
+
+  // Ensure postId has kind prefix (e.g., t3_)
+  const thingId = options.postId.includes('_') ? options.postId : `t3_${options.postId}`;
+
+  const response = await client.post('/api/comment', {
+    thing_id: thingId,
+    text: options.text,
+    api_type: 'json',
+  });
+
+  if (response.json.errors && response.json.errors.length > 0) {
+    throw new Error(`Reddit comment error: ${JSON.stringify(response.json.errors)}`);
+  }
+
+  const comment = response.json.data.things[0].data;
 
   logger.info({ commentId: comment.id }, 'Reddit comment posted');
 
   return {
     id: comment.id,
-    permalink: `https://reddit.com${comment.permalink}`,
+    permalink: `https://reddit.com${comment.permalink || ''}`,
   };
 }
 
 /**
- * Reply to comment
+ * Comment on post (rate-limited for API protection)
  */
-export async function replyToComment(
-  commentId: string,
-  text: string
+export const commentOnPost = withRateLimit(commentOnPostInternal, redditRateLimiter);
+
+/**
+ * Reply to comment (internal implementation)
+ */
+async function replyToCommentInternal(
+  options: RedditReplyOptions
 ): Promise<{ id: string; permalink: string }> {
-  if (!redditClient) {
-    throw new Error('Reddit client not initialized. Set Reddit credentials.');
+  if (!options.credentials) {
+    throw new Error('Reddit credentials are required');
   }
 
-  logger.info({ commentId, textLength: text.length }, 'Replying to Reddit comment');
+  const client = new RedditClient(options.credentials);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const comment: any = await (redditClient.getComment(commentId) as any);
-  const reply = (await comment.reply(text)) as unknown as { id: string; permalink: string };
+  logger.info({ commentId: options.commentId, textLength: options.text.length }, 'Replying to Reddit comment');
+
+  // Ensure commentId has kind prefix (e.g., t1_)
+  const thingId = options.commentId.includes('_') ? options.commentId : `t1_${options.commentId}`;
+
+  const response = await client.post('/api/comment', {
+    thing_id: thingId,
+    text: options.text,
+    api_type: 'json',
+  });
+
+  if (response.json.errors && response.json.errors.length > 0) {
+    throw new Error(`Reddit reply error: ${JSON.stringify(response.json.errors)}`);
+  }
+
+  const reply = response.json.data.things[0].data;
 
   logger.info({ replyId: reply.id }, 'Reddit reply posted');
 
   return {
     id: reply.id,
-    permalink: `https://reddit.com${reply.permalink}`,
+    permalink: `https://reddit.com${reply.permalink || ''}`,
   };
 }
+
+/**
+ * Reply to comment (rate-limited for API protection)
+ */
+export const replyToComment = withRateLimit(replyToCommentInternal, redditRateLimiter);
 
 /**
  * Get posts from subreddit (works without authentication using public API)
  */
 export async function getSubredditPosts(
-  subreddit: string,
-  sort: 'hot' | 'new' | 'top' | 'rising' = 'hot',
-  limit: number = 25
+  options: RedditGetPostsOptions
 ): Promise<RedditPost[]> {
+  const { subreddit, sort = 'hot', limit = 25, credentials } = options;
   logger.info({ subreddit, sort, limit }, 'Fetching Reddit posts');
 
-  // Use authenticated Snoowrap client if available
-  if (redditClient) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sub = await (redditClient.getSubreddit(subreddit) as any);
+  // Use authenticated client if available
+  if (credentials) {
+    const client = new RedditClient(credentials);
+    const response = await client.request(`/r/${subreddit}/${sort}?limit=${limit}`);
+    const posts = response.data.children;
+
+    logger.info({ postCount: posts.length }, 'Reddit posts fetched (authenticated)');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let listing: any;
-    switch (sort) {
-      case 'hot':
-        listing = await sub.getHot({ limit });
-        break;
-      case 'new':
-        listing = await sub.getNew({ limit });
-        break;
-      case 'top':
-        listing = await sub.getTop({ limit });
-        break;
-      case 'rising':
-        listing = await sub.getRising({ limit });
-        break;
-    }
-
-    logger.info({ postCount: listing.length }, 'Reddit posts fetched (authenticated)');
-
-    return listing.map((post: {
-      id: string;
-      title: string;
-      selftext: string;
-      url: string;
-      author: { name: string };
-      subreddit: { display_name: string };
-      score: number;
-      num_comments: number;
-      permalink: string;
-    }) => ({
-      id: post.id,
-      title: post.title,
-      selftext: post.selftext,
-      url: post.url,
-      author: post.author.name,
-      subreddit: post.subreddit.display_name,
-      score: post.score,
-      numComments: post.num_comments,
-      permalink: `https://reddit.com${post.permalink}`,
-    }));
+    return posts.map((item: any) => {
+      const post = item.data;
+      return {
+        id: post.id,
+        title: post.title,
+        selftext: post.selftext,
+        url: post.url,
+        author: post.author,
+        subreddit: post.subreddit,
+        score: post.score,
+        numComments: post.num_comments,
+        permalink: `https://reddit.com${post.permalink}`,
+      };
+    });
   }
 
   // Fall back to public JSON API (no authentication required)
@@ -282,11 +388,6 @@ export async function getSubredditPosts(
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'application/json, text/html',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'DNT': '1',
-      'Connection': 'keep-alive',
-      'Upgrade-Insecure-Requests': '1',
     },
   });
 
@@ -321,64 +422,62 @@ export async function getSubredditPosts(
  * Search posts
  */
 export async function searchPosts(
-  query: string,
-  subreddit?: string,
-  limit: number = 25
+  options: RedditSearchOptions
 ): Promise<RedditPost[]> {
-  if (!redditClient) {
-    throw new Error('Reddit client not initialized. Set Reddit credentials.');
+  const { query, subreddit, limit = 25, credentials } = options;
+
+  if (!credentials) {
+    throw new Error('Reddit credentials are required for search');
   }
+
+  const client = new RedditClient(credentials);
 
   logger.info({ query, subreddit, limit }, 'Searching Reddit posts');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let results: any;
-  if (subreddit) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sub = await (redditClient.getSubreddit(subreddit) as any);
-    results = await sub.search({ query, limit });
-  } else {
-    results = await redditClient.search({ query, limit });
-  }
+  const path = subreddit ? `/r/${subreddit}/search` : '/search';
+  const response = await client.request(`${path}?q=${encodeURIComponent(query)}&limit=${limit}&restrict_sr=${!!subreddit}`);
+
+  const results = response.data.children;
 
   logger.info({ resultCount: results.length }, 'Reddit search completed');
 
-  return results.map((post: {
-    id: string;
-    title: string;
-    selftext: string;
-    url: string;
-    author: { name: string };
-    subreddit: { display_name: string };
-    score: number;
-    num_comments: number;
-    permalink: string;
-  }) => ({
-    id: post.id,
-    title: post.title,
-    selftext: post.selftext,
-    url: post.url,
-    author: post.author.name,
-    subreddit: post.subreddit.display_name,
-    score: post.score,
-    numComments: post.num_comments,
-    permalink: `https://reddit.com${post.permalink}`,
-  }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return results.map((item: any) => {
+    const post = item.data;
+    return {
+      id: post.id,
+      title: post.title,
+      selftext: post.selftext,
+      url: post.url,
+      author: post.author,
+      subreddit: post.subreddit,
+      score: post.score,
+      numComments: post.num_comments,
+      permalink: `https://reddit.com${post.permalink}`,
+    };
+  });
 }
 
 /**
  * Upvote post
  */
-export async function upvotePost(postId: string): Promise<void> {
-  if (!redditClient) {
-    throw new Error('Reddit client not initialized. Set Reddit credentials.');
+export async function upvotePost(
+  options: RedditVoteOptions
+): Promise<void> {
+  if (!options.credentials) {
+    throw new Error('Reddit credentials are required');
   }
 
-  logger.info({ postId }, 'Upvoting Reddit post');
+  const client = new RedditClient(options.credentials);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const submission = await (redditClient.getSubmission(postId) as any);
-  await (submission as unknown as { upvote: () => Promise<void> }).upvote();
+  logger.info({ postId: options.postId }, 'Upvoting Reddit post');
+
+  const thingId = options.postId.includes('_') ? options.postId : `t3_${options.postId}`;
+
+  await client.post('/api/vote', {
+    id: thingId,
+    dir: 1,
+  });
 
   logger.info('Reddit post upvoted');
 }
@@ -386,16 +485,23 @@ export async function upvotePost(postId: string): Promise<void> {
 /**
  * Downvote post
  */
-export async function downvotePost(postId: string): Promise<void> {
-  if (!redditClient) {
-    throw new Error('Reddit client not initialized. Set Reddit credentials.');
+export async function downvotePost(
+  options: RedditVoteOptions
+): Promise<void> {
+  if (!options.credentials) {
+    throw new Error('Reddit credentials are required');
   }
 
-  logger.info({ postId }, 'Downvoting Reddit post');
+  const client = new RedditClient(options.credentials);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const submission = await (redditClient.getSubmission(postId) as any);
-  await (submission as unknown as { downvote: () => Promise<void> }).downvote();
+  logger.info({ postId: options.postId }, 'Downvoting Reddit post');
+
+  const thingId = options.postId.includes('_') ? options.postId : `t3_${options.postId}`;
+
+  await client.post('/api/vote', {
+    id: thingId,
+    dir: -1,
+  });
 
   logger.info('Reddit post downvoted');
 }

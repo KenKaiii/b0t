@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { agentChatSessionsTable, agentChatMessagesTable } from '@/lib/schema';
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getAgentWorkspaceDir, initializeAgentWorkspace } from '@/lib/agent-workspace';
 import { expandSlashCommand } from '@/lib/slash-command-expander';
@@ -50,22 +50,14 @@ export async function POST(request: Request) {
       metadata: null,
     });
 
-    // Update message count
-    const sessionData = await db
-      .select()
-      .from(agentChatSessionsTable)
-      .where(eq(agentChatSessionsTable.id, sessionId))
-      .limit(1);
-
-    if (sessionData[0]) {
-      await db
-        .update(agentChatSessionsTable)
-        .set({
-          messageCount: (sessionData[0].messageCount || 0) + 1,
-          updatedAt: new Date(),
-        })
-        .where(eq(agentChatSessionsTable.id, sessionId));
-    }
+    // Update message count (optimized: SQL increment instead of SELECT + UPDATE)
+    await db
+      .update(agentChatSessionsTable)
+      .set({
+        messageCount: sql`COALESCE(${agentChatSessionsTable.messageCount}, 0) + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(agentChatSessionsTable.id, sessionId));
 
     // Map model to API model ID
     const modelMap: Record<string, string> = {
@@ -74,6 +66,13 @@ export async function POST(request: Request) {
     };
 
     const apiModelId = modelMap[model] || modelMap.sonnet;
+
+    // Get session data for checking message count and SDK session ID
+    const sessionData = await db
+      .select()
+      .from(agentChatSessionsTable)
+      .where(eq(agentChatSessionsTable.id, sessionId))
+      .limit(1);
 
     // Create SSE stream
     const encoder = new TextEncoder();
@@ -228,11 +227,11 @@ export async function POST(request: Request) {
             metadata: null,
           });
 
-          // Update message count again for assistant message
+          // Update message count again for assistant message (optimized: SQL increment)
           await db
             .update(agentChatSessionsTable)
             .set({
-              messageCount: (sessionData[0]?.messageCount || 0) + 2,
+              messageCount: sql`COALESCE(${agentChatSessionsTable.messageCount}, 0) + 1`,
               updatedAt: new Date(),
             })
             .where(eq(agentChatSessionsTable.id, sessionId));

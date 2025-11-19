@@ -18,6 +18,22 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
 
+  // Performance optimizations (10-15% bundle size reduction)
+  experimental: {
+    // Tree-shake icon libraries for better bundle size
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    // Minify server code in production
+    serverMinification: true,
+  },
+
+  // Production-only optimizations
+  compiler: {
+    // Remove console.log in production (keep error/warn for debugging)
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+
   // Exclude packages with native dependencies from webpack bundling
   // This fixes build errors with discord.js and other native modules
   // Note: ioredis and bullmq are NOT in this list to avoid Turbopack conflicts

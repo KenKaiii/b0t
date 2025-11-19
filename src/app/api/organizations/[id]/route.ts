@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import {
   getOrganizationById,
-  userHasAccessToOrganization,
   getUserRoleInOrganization,
-  deleteOrganization
+  deleteOrganization,
+  getOrganizationWithRole
 } from '@/lib/organizations';
 import { db } from '@/lib/db';
 import { organizationsTable } from '@/lib/schema';
@@ -28,26 +28,17 @@ export async function GET(
     const session = await requireAuth();
     const { id } = await context.params;
 
-    // Check access
-    const hasAccess = await userHasAccessToOrganization(session.user.id, id);
-    if (!hasAccess) {
-      return NextResponse.json(
-        { success: false, error: 'Access denied' },
-        { status: 403 }
-      );
-    }
+    // Optimized: Single query with JOIN instead of 3 separate queries
+    const result = await getOrganizationWithRole(session.user.id, id);
 
-    const organization = await getOrganizationById(id);
-
-    if (!organization) {
+    if (!result) {
       return NextResponse.json(
-        { success: false, error: 'Organization not found' },
+        { success: false, error: 'Organization not found or access denied' },
         { status: 404 }
       );
     }
 
-    // Get user's role in this organization
-    const role = await getUserRoleInOrganization(session.user.id, id);
+    const { organization, role } = result;
 
     logger.info(
       { userId: session.user.id, organizationId: id, role, action: 'organization_fetch_success' },

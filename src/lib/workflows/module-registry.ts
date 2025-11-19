@@ -4568,32 +4568,32 @@ export function getModuleRegistry(): ModuleCategory[] {
             {
               name: 'commentOnPost',
               description: "Comment on post",
-              signature: 'commentOnPost(postId, text)',
+              signature: 'commentOnPost(options)',
             },
             {
               name: 'replyToComment',
               description: "Reply to comment",
-              signature: 'replyToComment(commentId, text)',
+              signature: 'replyToComment(options)',
             },
             {
               name: 'getSubredditPosts',
               description: "Get posts from subreddit (works without authentication using public API)",
-              signature: 'getSubredditPosts(subreddit, sort?, limit?)',
+              signature: 'getSubredditPosts(options)',
             },
             {
               name: 'searchPosts',
               description: "Search posts",
-              signature: 'searchPosts(query, subreddit?, limit?)',
+              signature: 'searchPosts(options)',
             },
             {
               name: 'upvotePost',
               description: "Upvote post",
-              signature: 'upvotePost(postId)',
+              signature: 'upvotePost(options)',
             },
             {
               name: 'downvotePost',
               description: "Downvote post",
-              signature: 'downvotePost(postId)',
+              signature: 'downvotePost(options)',
             },
           ],
         },
@@ -6475,6 +6475,26 @@ export function getModuleRegistry(): ModuleCategory[] {
               name: 'extractStructuredData',
               description: "Extract structured data (JSON-LD)",
               signature: 'extractStructuredData($)',
+            },
+          ],
+        },
+        {
+          name: 'serper',
+          functions: [
+            {
+              name: 'searchGoogle',
+              description: "Google Web Search",
+              signature: 'searchGoogle(query, limit?)',
+            },
+            {
+              name: 'searchImages',
+              description: "Google Image Search",
+              signature: 'searchImages(query, limit?)',
+            },
+            {
+              name: 'searchNews',
+              description: "Google News Search",
+              signature: 'searchNews(query, limit?)',
             },
           ],
         },

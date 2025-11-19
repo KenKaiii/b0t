@@ -20,36 +20,29 @@ export async function cleanupChatMessages(): Promise<void> {
     let totalConversationsArchived = 0;
 
     // 1. Clean up old messages in active conversations (keep last 100 per conversation)
-    const conversations = await db
-      .select({ id: chatConversationsTable.id })
-      .from(chatConversationsTable)
-      .where(eq(chatConversationsTable.status, 'active'));
+    // Uses window functions for optimal performance (single query instead of N queries)
+    const deleteResult = await db.execute(sql`
+      DELETE FROM ${chatMessagesTable}
+      WHERE id IN (
+        SELECT id FROM (
+          SELECT
+            ${chatMessagesTable.id} as id,
+            ROW_NUMBER() OVER (
+              PARTITION BY ${chatMessagesTable.conversationId}
+              ORDER BY ${chatMessagesTable.createdAt} DESC
+            ) as rn
+          FROM ${chatMessagesTable}
+          WHERE ${chatMessagesTable.conversationId} IN (
+            SELECT ${chatConversationsTable.id}
+            FROM ${chatConversationsTable}
+            WHERE ${chatConversationsTable.status} = 'active'
+          )
+        ) ranked
+        WHERE rn > 100
+      )
+    `);
 
-    for (const conversation of conversations) {
-      // Get message IDs to keep (last 100 messages)
-      const messagesToKeep = await db
-        .select({ id: chatMessagesTable.id })
-        .from(chatMessagesTable)
-        .where(eq(chatMessagesTable.conversationId, conversation.id))
-        .orderBy(sql`${chatMessagesTable.createdAt} DESC`)
-        .limit(100);
-
-      if (messagesToKeep.length === 100) {
-        // If we have more than 100 messages, delete the older ones
-        const keepIds = messagesToKeep.map((m) => m.id);
-
-        const result = await db
-          .delete(chatMessagesTable)
-          .where(
-            and(
-              eq(chatMessagesTable.conversationId, conversation.id),
-              sql`${chatMessagesTable.id} NOT IN (${sql.join(keepIds.map(id => sql`${id}`), sql`, `)})`
-            )
-          );
-
-        totalMessagesDeleted += result.rowCount || 0;
-      }
-    }
+    totalMessagesDeleted += deleteResult.rowCount || 0;
 
     // 2. Archive inactive conversations (no updates in 90+ days)
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);

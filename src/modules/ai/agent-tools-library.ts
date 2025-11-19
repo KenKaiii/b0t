@@ -20,6 +20,61 @@ import { logger } from '@/lib/logger';
 // ============================================================================
 
 /**
+ * Search the web using Google Search
+ */
+export const searchWebTool: Tool = {
+  description: `Search the web for information using Google Search.
+Use this to find current events, news, facts, or information not in your training data.
+Returns a list of search results with titles, links, and snippets.`,
+  inputSchema: z.object({
+    query: z.string().min(1).describe('The search query'),
+    type: z.enum(['search', 'news', 'images']).optional().describe('Type of search: "search" (default), "news", or "images"'),
+    limit: z.number().min(1).max(20).optional().describe('Number of results to return (default: 10)'),
+  }),
+  execute: async (params) => {
+    const { query, type = 'search', limit = 10 } = params as {
+      query: string;
+      type?: 'search' | 'news' | 'images';
+      limit?: number;
+    };
+
+    try {
+      logger.info({ query, type }, 'Agent tool: Searching web');
+
+      // Dynamic import to avoid circular dependencies
+      const { searchGoogle, searchNews, searchImages } = await import('@/modules/utilities/serper');
+
+      let results;
+      if (type === 'news') {
+        results = await searchNews(query, limit);
+      } else if (type === 'images') {
+        results = await searchImages(query, limit);
+      } else {
+        results = await searchGoogle(query, limit);
+      }
+
+      logger.info({ query, resultCount: results.length }, 'Web search completed');
+
+      return {
+        success: true,
+        query,
+        type,
+        results,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error({ query, error: errorMessage }, 'Web search failed');
+
+      return {
+        success: false,
+        query,
+        error: errorMessage,
+      };
+    }
+  },
+};
+
+/**
  * Fetch and extract text content from a web page
  */
 export const fetchWebPageTool: Tool = {
@@ -107,7 +162,7 @@ Examples: news articles, documentation pages, blog posts, product pages.`,
  */
 export const generateTextTool: Tool = {
   description: `Generate text using an AI language model.
-Use this for writing, brainstorming, analysis, or any text generation task.
+  Use this for writing, brainstorming, analysis, or any text generation task.
 Supports any OpenAI or Anthropic model with configurable temperature and max tokens.`,
   inputSchema: z.object({
     prompt: z.string().min(1).describe('The prompt or instruction for text generation'),
@@ -253,7 +308,7 @@ Use this for any mathematical operations or computations.`,
 export const agentToolsLibrary: Record<string, Tool> = {
   // Web & Content
   fetchWebPage: fetchWebPageTool,
-  // searchWeb: searchWebTool, // TODO: Enable when serper module is available
+  searchWeb: searchWebTool,
 
   // AI & Generation
   generateText: generateTextTool,
@@ -272,7 +327,7 @@ export const agentToolsLibrary: Record<string, Tool> = {
  */
 export function getAgentToolsByCategory(categories: string[]): Record<string, Tool> {
   const categoryMap: Record<string, string[]> = {
-    web: ['fetchWebPage'], // 'searchWeb' when available
+    web: ['fetchWebPage', 'searchWeb'],
     ai: ['generateText'], // 'generateImage' when available
     communication: [], // 'sendEmail' when available
     utilities: ['getCurrentDateTime', 'calculate'],
