@@ -66,6 +66,19 @@ Use AskUserQuestion tool to gather:
 
 **Do NOT proceed without reading ALL FOUR files!**
 
+**3. Optionally read module category references (as needed):**
+
+Based on what modules the user needs, read relevant category references:
+- AI/ML workflows → `.claude/skills/workflow-generator-v2/references/modules/ai-modules.md`
+- Social media → `.claude/skills/workflow-generator-v2/references/modules/social-modules.md`
+- Email/messaging → `.claude/skills/workflow-generator-v2/references/modules/communication-modules.md`
+- CRM/invoicing → `.claude/skills/workflow-generator-v2/references/modules/business-modules.md`
+- Databases/sheets → `.claude/skills/workflow-generator-v2/references/modules/data-modules.md`
+- E-commerce → `.claude/skills/workflow-generator-v2/references/modules/ecommerce-modules.md`
+- Other categories → `.claude/skills/workflow-generator-v2/references/modules/other-categories.md`
+
+These provide usage patterns, credential requirements, and examples for each category.
+
 ## Step 3: Search for Modules (MANDATORY - DO NOT SKIP)
 
 **YOU MUST SEARCH FOR EVERY MODULE YOU PLAN TO USE. NEVER GUESS!**
