@@ -32,6 +32,8 @@ interface WorkflowPlan {
   name: string;
   description?: string;
   trigger: 'manual' | 'cron' | 'webhook' | 'telegram' | 'discord' | 'chat' | 'chat-input';
+  webhookSync?: boolean;  // Enable synchronous webhook execution (returns workflow output)
+  webhookSecret?: string;  // HMAC secret for webhook signature verification
   output: 'json' | 'table' | 'list' | 'text' | 'markdown' | 'image' | 'images' | 'chart';
   outputColumns?: string[];
   category?: string;
@@ -378,6 +380,14 @@ async function buildWorkflowFromPlan(planFile: string, autoFix: boolean = true):
   } else if (plan.trigger === 'chat' || plan.trigger === 'chat-input') {
     // Add required inputVariable for chat triggers
     triggerConfig.inputVariable = 'userInput';
+  } else if (plan.trigger === 'webhook') {
+    // Add webhook-specific configuration
+    if (plan.webhookSync !== undefined) {
+      triggerConfig.sync = plan.webhookSync;
+    }
+    if (plan.webhookSecret) {
+      triggerConfig.webhookSecret = plan.webhookSecret;
+    }
   }
 
   const workflow: WorkflowExport = {

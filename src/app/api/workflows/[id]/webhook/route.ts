@@ -4,6 +4,7 @@ import { workflowsTable } from '@/lib/schema';
 import { eq, and } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { queueWorkflowExecution } from '@/lib/workflows/workflow-queue';
+import { executeWorkflow } from '@/lib/workflows/executor';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { checkStrictRateLimit } from '@/lib/ratelimit';
 import { auth } from '@/lib/auth';
@@ -18,6 +19,14 @@ export const dynamic = 'force-dynamic';
  * 1. Workflow exists
  * 2. Workflow status is 'active'
  * 3. Workflow trigger type is 'webhook'
+ *
+ * Execution Modes:
+ * - Async (default): Queues workflow, returns {"queued": true} immediately
+ * - Sync: Executes workflow, waits for completion, returns actual output
+ *
+ * Enable sync mode via:
+ * - Query parameter: ?sync=true
+ * - OR trigger config: {"type": "webhook", "config": {"sync": true}}
  */
 export async function POST(
   request: NextRequest,
@@ -62,7 +71,20 @@ export async function POST(
     }
 
     // Check if trigger type is webhook
-    const trigger = workflow.trigger as { type: string; config: Record<string, unknown> };
+    // Parse trigger - for PostgreSQL it might be a string, for SQLite it's already an object
+    let trigger: { type: string; config?: Record<string, unknown> };
+    try {
+      trigger = (typeof workflow.trigger === 'string'
+        ? JSON.parse(workflow.trigger)
+        : workflow.trigger) as { type: string; config?: Record<string, unknown> };
+    } catch (error) {
+      logger.error({ workflowId: id, error, trigger: workflow.trigger }, 'Failed to parse trigger');
+      return NextResponse.json(
+        { error: 'Invalid trigger configuration' },
+        { status: 500 }
+      );
+    }
+
     if (trigger.type !== 'webhook') {
       logger.warn(
         { workflowId: id, triggerType: trigger.type },
@@ -133,18 +155,76 @@ export async function POST(
     const url = new URL(request.url);
     const queryParams = Object.fromEntries(url.searchParams.entries());
 
-    // Queue workflow execution with webhook data
+    const triggerData = {
+      body,
+      headers,
+      query: queryParams,
+      method: request.method,
+      url: url.pathname,
+    };
+
+    // Check if synchronous execution is requested
+    const syncExecution = trigger.config?.sync === true || url.searchParams.get('sync') === 'true';
+
+    if (syncExecution) {
+      // Execute workflow synchronously and return results
+      logger.info(
+        {
+          workflowId: id,
+          userId: workflow.userId,
+          hasBody: Object.keys(body).length > 0,
+          hasQuery: Object.keys(queryParams).length > 0,
+        },
+        'Executing webhook workflow synchronously'
+      );
+
+      const result = await executeWorkflow(
+        id,
+        workflow.userId,
+        'webhook',
+        triggerData
+      );
+
+      if (!result.success) {
+        logger.error(
+          { workflowId: id, error: result.error, errorStep: result.errorStep },
+          'Webhook workflow execution failed'
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            error: result.error,
+            errorStep: result.errorStep,
+            workflowId: id,
+            workflowName: workflow.name,
+          },
+          { status: 500 }
+        );
+      }
+
+      logger.info(
+        {
+          workflowId: id,
+          userId: workflow.userId,
+          hasOutput: !!result.output,
+        },
+        'Webhook workflow executed successfully'
+      );
+
+      return NextResponse.json({
+        success: true,
+        workflowId: id,
+        workflowName: workflow.name,
+        output: result.output,
+      });
+    }
+
+    // Async execution: Queue workflow execution with webhook data
     await queueWorkflowExecution(
       id,
       workflow.userId,
       'webhook',
-      {
-        body,
-        headers,
-        query: queryParams,
-        method: request.method,
-        url: url.pathname,
-      }
+      triggerData
     );
 
     logger.info(

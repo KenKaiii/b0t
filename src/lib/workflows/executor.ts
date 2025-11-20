@@ -224,16 +224,18 @@ export async function executeWorkflow(
       logger.info('EXECUTOR - No returnValue config, auto-detecting output');
       // Auto-detect: Filter out internal variables and return only step outputs
       // Internal variables: user, trigger, credentials (youtube_apikey, openai, etc.)
-      const internalKeys = ['user', 'trigger'];
+      const internalKeys = ['user', 'trigger', 'credential', 'credentials'];
       const filteredVars: Record<string, unknown> = {};
 
       for (const [key, value] of Object.entries(context.variables as Record<string, unknown>)) {
         // Skip internal variables
         if (internalKeys.includes(key)) continue;
         // Skip credential variables (they're from user credentials table)
-        if (key.includes('_apikey') || key.includes('_api_key')) continue;
+        if (key.includes('_apikey') || key.includes('_api_key') || key.includes('_oauth')) continue;
+        // Skip if key contains common credential patterns
+        if (key.includes('token') || key.includes('secret') || key.includes('password')) continue;
         // Skip if it's a known credential platform
-        if (['openai', 'anthropic', 'youtube', 'slack', 'twitter', 'github', 'reddit'].includes(key)) continue;
+        if (['openai', 'anthropic', 'youtube', 'slack', 'twitter', 'github', 'reddit', 'openrouter', 'rapidapi'].includes(key)) continue;
 
         filteredVars[key] = value;
       }

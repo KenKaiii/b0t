@@ -48,6 +48,9 @@ export default auth((req) => {
     '/api/modules/search',         // Module search for agent (no auth for local agent)
   ];
 
+  // Check if this is a webhook endpoint (pattern: /api/workflows/[id]/webhook)
+  const isWebhookEndpoint = /^\/api\/workflows\/[^\/]+\/webhook$/.test(pathname);
+
   // Check if the current path is public or is the root path
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route)
@@ -56,8 +59,8 @@ export default auth((req) => {
   // Root path is handled by page.tsx, so we allow it through middleware
   const isRootPath = pathname === '/';
 
-  // If route is not public, not root, and user is not authenticated, redirect to signin
-  if (!isPublicRoute && !isRootPath && !isAuthenticated) {
+  // If route is not public, not root, not webhook, and user is not authenticated, redirect to signin
+  if (!isPublicRoute && !isRootPath && !isWebhookEndpoint && !isAuthenticated) {
     const signInUrl = new URL('/auth/signin', req.url);
     signInUrl.searchParams.set('callbackUrl', pathname);
     const redirectResponse = NextResponse.redirect(signInUrl);
