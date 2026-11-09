@@ -6,6 +6,9 @@ No drag-and-drop builders. No wiring nodes together. No watching tutorial videos
 
 **Open source. Free. Self-hostable. No vendor lock-in.**
 
+> [!TIP]
+> **Want to build your own apps with AI?** A free 7-day build challenge and 20+ step-by-step projects are in my free community: **[skool.com/raid](https://www.skool.com/raid)**
+
 ---
 
 ## What is this?
